@@ -1,0 +1,45 @@
+# ---- Unity generated ----
+[Ll]ibrary/
+[Tt]emp/
+[Oo]bj/
+[Bb]uild/
+[Bb]uilds/
+[Ll]ogs/
+[Uu]ser[Ss]ettings/
+[Mm]emoryCaptures/
+[Rr]ecordings/
+
+# Asset meta files should NOT be ignored when their asset is tracked
+!/[Aa]ssets/**/*.meta
+
+# ---- IDE / editor (Unity regenerates project files) ----
+.vs/
+.vscode/
+.idea/
+*.csproj
+*.unityproj
+*.sln
+*.suo
+*.user
+*.userprefs
+*.pidb
+*.booproj
+*.svd
+*.tmp
+*.pdb
+*.mdb
+*.opendb
+*.VC.db
+
+# ---- Builds / packages ----
+*.apk
+*.aab
+*.unitypackage
+*.app
+
+# ---- Crashlytics ----
+crashlytics-build.properties
+
+# ---- OS ----
+.DS_Store
+Thumbs.db
