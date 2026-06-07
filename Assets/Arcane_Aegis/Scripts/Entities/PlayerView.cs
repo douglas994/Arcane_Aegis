@@ -3,6 +3,7 @@ using KinematicCharacterController;
 using Arcane_Aegis.Controllers;
 using Arcane_Aegis.Controllers.Inputs;
 using Arcane_Aegis.Controllers.Locomotion;
+using Arcane_Aegis.Controllers.Combat;
 
 namespace Arcane_Aegis.Entities
 {
@@ -28,6 +29,7 @@ namespace Arcane_Aegis.Entities
             var fsm = GetComponent<LocomotionStateMachine>();
             var input = GetComponent<PlayerInput>();
             var sender = GetComponent<MovementSender>();
+            var combat = GetComponent<PlayerCombat>();
             var anim = GetComponentInChildren<CharacterAnimator>();
 
             // Control stack ON for local, OFF for remote (the motor stops simulating when disabled).
@@ -36,6 +38,7 @@ namespace Arcane_Aegis.Entities
             if (fsm != null) fsm.enabled = isLocal;
             if (input != null) input.enabled = isLocal;
             if (sender != null) sender.enabled = isLocal;
+            if (combat != null) combat.enabled = isLocal;
 
             SetInterpolated(!isLocal);                 // remote follows snapshots; local drives via KCC
 

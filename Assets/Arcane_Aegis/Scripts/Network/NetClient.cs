@@ -10,6 +10,7 @@ using ArcaneShared.Protocol;
 using ArcaneShared.Protocol.ClientToServer;
 using ArcaneShared.Protocol.ServerToClient;
 using Arcane_Aegis.Entities;
+using Arcane_Aegis.UI;
 
 namespace Arcane_Aegis.Network
 {
@@ -85,6 +86,21 @@ namespace Arcane_Aegis.Network
             Send(packet, DeliveryMethod.Sequenced);
         }
 
+        /// <summary>Asks the server to cast an ability (server validates + resolves; we never decide damage).</summary>
+        public void SendCast(byte abilityId, ushort targetId)
+        {
+            if (!InWorld || _server == null) return;
+            Send(new C2S_CastAbility { AbilityId = abilityId, TargetId = targetId }, DeliveryMethod.ReliableOrdered);
+        }
+
+        /// <summary>UI-friendly cast: drag this NetClient into a Button's OnClick → CastAbility, set the ability id.
+        /// Sends the cast and plays the local predicted attack animation. (int param so the inspector accepts it.)</summary>
+        public void CastAbility(int abilityId)
+        {
+            SendCast((byte)abilityId, 0);
+            if (_localView != null) _localView.PlayAttack(); // predicted anim
+        }
+
         private void Send<T>(in T packet, DeliveryMethod method) where T : IPacket
         {
             var buffer = new BitBuffer();
@@ -127,7 +143,12 @@ namespace Arcane_Aegis.Network
                     MyEntityId = p.YourEntityId;
                     InWorld = p.Success;
                     Debug.Log($"[NetClient] login {(p.Success ? "OK" : "FAIL")} — my id = {p.YourEntityId}");
-                    if (p.Success && !_localSpawned) { _localSpawned = true; _localView = entities.SpawnLocal(MyEntityId, username); }
+                    if (p.Success && !_localSpawned)
+                    {
+                        _localSpawned = true;
+                        var sp = new Vector3(p.SpawnPosition.X, p.SpawnPosition.Y, p.SpawnPosition.Z);
+                        _localView = entities.SpawnLocal(MyEntityId, username, sp);
+                    }
                     break;
                 }
                 case PacketId.S2C_SpawnEntity:
@@ -161,6 +182,30 @@ namespace Arcane_Aegis.Network
                         var cp = new Vector3(p.CorrectedPosition.X, p.CorrectedPosition.Y, p.CorrectedPosition.Z);
                         _localView.Motor.SetPosition(cp);
                         Debug.Log($"[NetClient] position corrected by server → {cp}");
+                    }
+                    break;
+                }
+                case PacketId.S2C_AbilityCast:
+                {
+                    var p = new S2C_AbilityCast();
+                    p.Deserialize(ref reader);
+                    if (p.CasterId != MyEntityId) entities.PlayAttack(p.CasterId); // local already predicted it
+                    break;
+                }
+                case PacketId.S2C_CombatEvent:
+                {
+                    var p = new S2C_CombatEvent();
+                    p.Deserialize(ref reader);
+                    Vector3 pos;
+                    bool found = false;
+                    if (p.TargetId == MyEntityId && _localView != null) { pos = _localView.transform.position; found = true; }
+                    else if (entities.TryGetView(p.TargetId, out var v)) { pos = v.transform.position; found = true; }
+                    else pos = default;
+                    if (found)
+                    {
+                        bool heal = (p.Flags & S2C_CombatEvent.FlagHeal) != 0;
+                        bool crit = (p.Flags & S2C_CombatEvent.FlagCrit) != 0;
+                        DamagePopup.Spawn(pos + Vector3.up * 2f, p.Amount, crit, heal);
                     }
                     break;
                 }

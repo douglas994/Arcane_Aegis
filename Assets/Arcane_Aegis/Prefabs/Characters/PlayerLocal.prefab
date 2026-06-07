@@ -1715,6 +1715,7 @@ GameObject:
   - component: {fileID: 3699790201082161593}
   - component: {fileID: 3242758048620761163}
   - component: {fileID: -5879357210057163665}
+  - component: {fileID: -7594801765373167480}
   m_Layer: 0
   m_Name: PlayerLocal
   m_TagString: Untagged
@@ -1875,6 +1876,7 @@ MonoBehaviour:
   fsm: {fileID: 5922108852426915065}
   speedParam: Speed
   groundedParam: Grounded
+  attackTrigger: Attack
   speedDamp: 0.1
   maxSpeed: 7
 --- !u!114 &1388933930979981160
@@ -1937,8 +1939,25 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 631f3597cbe337e4fb41d85896b86377, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::Arcane_Aegis.Entities.EntityVitals
+  bar: {fileID: 0}
   fill: {fileID: 0}
   root: {fileID: 0}
+--- !u!114 &-7594801765373167480
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7531496383920890079}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 79a61b43053d7f54dbab1ff53bea84dc, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::Arcane_Aegis.Controllers.Combat.PlayerCombat
+  basicAbilityId: 1
+  localCooldown: 0.4
+  input: {fileID: 6430173092718962970}
+  animator: {fileID: 3546842684791674434}
 --- !u!1 &7622696344009132845
 GameObject:
   m_ObjectHideFlags: 0

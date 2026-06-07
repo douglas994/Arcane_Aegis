@@ -33,8 +33,8 @@ namespace Arcane_Aegis.Entities
             Debug.Log($"[Entities] spawn #{data.EntityId} ({data.Name})");
         }
 
-        /// <summary>Spawns OUR own player (server skips self in replication; NetClient calls this on login).</summary>
-        public PlayerView SpawnLocal(ushort id, string name)
+        /// <summary>Spawns OUR own player at the SERVER-given spawn point (NetClient calls this on login).</summary>
+        public PlayerView SpawnLocal(ushort id, string name, Vector3 serverSpawn)
         {
             EntityView view = CreateView(id, name);
             view.Id = id;
@@ -44,18 +44,10 @@ namespace Arcane_Aegis.Entities
             if (pv != null) pv.Initialize(isLocal: true);
             else Debug.LogError("[Entities] characterPrefab root has no PlayerView — local control/interpolation won't be configured. Put PlayerView on the prefab ROOT.");
 
-            // Coordinates are quantized to [0, 8192] (WorldQuant) → MUST stay positive. Spawn near the
-            // terrain CENTER (well inside the range), NOT at the world corner (0,0): from the corner,
-            // moving into -X/-Z corrupts the networked position and the remote sync freezes.
-            Vector2 off = Random.insideUnitCircle * 5f;          // spread test clients apart
-            Vector3 basePos = new Vector3(100f, 0f, 100f);       // fallback if there's no terrain
-            Terrain terrain = Terrain.activeTerrain;
-            if (terrain != null)
-            {
-                Vector3 size = terrain.terrainData.size;
-                basePos = terrain.transform.position + new Vector3(size.x * 0.5f, 0f, size.z * 0.5f);
-            }
-            Vector3 spawn = new Vector3(basePos.x + off.x, basePos.y + 2f, basePos.z + off.y);
+            // The server dictates the spawn (positive, inside the zone — coords are quantized to [0,8192]).
+            // Small offset so two test clients don't overlap; +2 y so the KCC drops onto the ground.
+            Vector2 off = Random.insideUnitCircle * 2f;
+            Vector3 spawn = new Vector3(serverSpawn.x + off.x, serverSpawn.y + 2f, serverSpawn.z + off.y);
             if (pv != null && pv.Motor != null) pv.Motor.SetPosition(spawn);
             else view.transform.position = spawn;
 
@@ -73,6 +65,14 @@ namespace Arcane_Aegis.Entities
         public void ApplySnapshot(in SnapshotEntry e)
         {
             if (_views.TryGetValue(e.Id, out var view)) view.ApplySnapshot(e);
+        }
+
+        public bool TryGetView(ushort id, out EntityView view) => _views.TryGetValue(id, out view);
+
+        /// <summary>Plays the attack animation on a remote entity (from S2C_AbilityCast).</summary>
+        public void PlayAttack(ushort id)
+        {
+            if (_views.TryGetValue(id, out var view)) view.PlayAttack();
         }
 
         private EntityView CreateView(ushort id, string name)

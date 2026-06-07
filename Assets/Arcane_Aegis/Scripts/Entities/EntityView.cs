@@ -81,6 +81,12 @@ namespace Arcane_Aegis.Entities
             transform.SetPositionAndRotation(position, Quaternion.Euler(0f, yaw, 0f));
         }
 
+        /// <summary>Plays the attack animation on this entity (driven by S2C_AbilityCast for remotes).</summary>
+        public void PlayAttack()
+        {
+            if (characterAnimator != null) characterAnimator.TriggerAttack();
+        }
+
         private void Update()
         {
             if (!_interpolate) return;

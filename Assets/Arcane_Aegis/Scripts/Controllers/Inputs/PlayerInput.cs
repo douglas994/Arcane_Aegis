@@ -15,6 +15,7 @@ namespace Arcane_Aegis.Controllers.Inputs
 
         private MMO_Inputs _actions;
         private bool _jumpLatched;
+        private bool _attackLatched;
 
         /// <summary>Movement axis (x = strafe, y = forward). Keyboard WASD or gamepad left stick.</summary>
         public Vector2 Move { get; private set; }
@@ -52,6 +53,7 @@ namespace Arcane_Aegis.Controllers.Inputs
             DashHeld = _actions.Player.Dash.IsPressed();
 
             if (_actions.Player.Jump.WasPressedThisFrame()) _jumpLatched = true;
+            if (_actions.Player.Attack.WasPressedThisFrame()) _attackLatched = true;
         }
 
         /// <summary>Returns true once per jump press (latched so frame-ordering doesn't drop it).</summary>
@@ -59,6 +61,14 @@ namespace Arcane_Aegis.Controllers.Inputs
         {
             if (!_jumpLatched) return false;
             _jumpLatched = false;
+            return true;
+        }
+
+        /// <summary>Returns true once per attack press (left mouse / gamepad West).</summary>
+        public bool ConsumeAttack()
+        {
+            if (!_attackLatched) return false;
+            _attackLatched = false;
             return true;
         }
     }

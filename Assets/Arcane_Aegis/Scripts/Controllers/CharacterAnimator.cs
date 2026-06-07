@@ -22,6 +22,8 @@ namespace Arcane_Aegis.Controllers
         [Header("Animator parameters")]
         [SerializeField] private string speedParam = "Speed";
         [SerializeField] private string groundedParam = "Grounded";
+        [SerializeField] private string attackTrigger = "Attack";
+        [SerializeField] private string deadParam = "Dead";
         [SerializeField] private float speedDamp = 0.1f;
         [SerializeField] private float maxSpeed = 7f; // = DashSpeed; normalizes Speed to 0..1 (idle 0, run ~0.5, dash 1)
 
@@ -31,8 +33,8 @@ namespace Arcane_Aegis.Controllers
         /// <summary>Horizontal speed (m/s) for REMOTES, set by EntityView from snapshot positions. Ignored if an FSM is assigned.</summary>
         public float SourceSpeed { get; set; }
 
-        private int _speedHash, _groundedHash;
-        private bool _hasSpeed, _hasGrounded;
+        private int _speedHash, _groundedHash, _attackHash, _deadHash;
+        private bool _hasSpeed, _hasGrounded, _hasAttack, _hasDead;
 
         private void Start()
         {
@@ -44,6 +46,10 @@ namespace Arcane_Aegis.Controllers
                 _groundedHash = Animator.StringToHash(groundedParam);
                 _hasSpeed = HasParam(speedParam);
                 _hasGrounded = HasParam(groundedParam);
+                _attackHash = Animator.StringToHash(attackTrigger);
+                _hasAttack = HasParam(attackTrigger);
+                _deadHash = Animator.StringToHash(deadParam);
+                _hasDead = HasParam(deadParam);
             }
         }
 
@@ -74,6 +80,18 @@ namespace Arcane_Aegis.Controllers
 
         /// <summary>Use the networked source (State + SourceSpeed pushed by EntityView) — remote players.</summary>
         public void UseNetworkSource() => fsm = null;
+
+        /// <summary>Fires the attack animation (no-op if the controller has no such trigger yet).</summary>
+        public void TriggerAttack()
+        {
+            if (animator != null && _hasAttack) animator.SetTrigger(_attackHash);
+        }
+
+        /// <summary>Sets the Dead bool so the controller plays/exits the death animation (no-op if absent).</summary>
+        public void SetDead(bool dead)
+        {
+            if (animator != null && _hasDead) animator.SetBool(_deadHash, dead);
+        }
 
         private bool HasParam(string name)
         {
