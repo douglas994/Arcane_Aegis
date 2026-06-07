@@ -13,6 +13,20 @@ namespace Arcane_Aegis.Entities
         [SerializeField] private EntityVitals vitals; // world-space health bar (above the head)
         [SerializeField] private float deathHideDelay = 2f; // let the death anim play before the body hides
 
+        // Exact vitals — mirrors the server's Humanoid. Filled for the OWN player from S2C_StateUpdate; remotes
+        // only receive the quantized HP% in the snapshot (used by the world bar above their head).
+        public int Hp { get; private set; }
+        public int MaxHp { get; private set; }
+        public int Mana { get; private set; }
+        public int MaxMana { get; private set; }
+        public float HpFraction => MaxHp > 0 ? (float)Hp / MaxHp : 0f;
+        public float ManaFraction => MaxMana > 0 ? (float)Mana / MaxMana : 0f;
+
+        public void SetVitals(int hp, int maxHp, int mana, int maxMana)
+        {
+            Hp = hp; MaxHp = maxHp; Mana = mana; MaxMana = maxMana;
+        }
+
         private Renderer[] _renderers;
         private bool _wasDead;
 

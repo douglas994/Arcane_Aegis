@@ -9,7 +9,7 @@ namespace Arcane_Aegis.Entities
 {
     /// <summary>
     /// A player view (mirrors the server's Player). ONE prefab serves both the local and remote player —
-    /// <see cref="Initialize"/> wires the control layer:
+    /// <see cref="Spawn"/> wires the control layer:
     ///   local  → KCC + FSM + input drive the transform (interpolation OFF, anim from the FSM)
     ///   remote → snapshot interpolation drives it (control OFF, anim from networked speed)
     /// </summary>
@@ -18,8 +18,10 @@ namespace Arcane_Aegis.Entities
         /// <summary>The KCC motor (local only) — used for server position corrections.</summary>
         public KinematicCharacterMotor Motor { get; private set; }
         public bool IsLocal { get; private set; }
+        /// <summary>This player's combat (cooldown owner) — the action-bar casts through it.</summary>
+        public PlayerCombat Combat { get; private set; }
 
-        public void Initialize(bool isLocal)
+        public override void Spawn(bool isLocal)
         {
             IsLocal = isLocal;
             gameObject.tag = isLocal ? "Player" : "Untagged"; // the camera follows only the local "Player"
@@ -39,6 +41,7 @@ namespace Arcane_Aegis.Entities
             if (input != null) input.enabled = isLocal;
             if (sender != null) sender.enabled = isLocal;
             if (combat != null) combat.enabled = isLocal;
+            Combat = combat;
 
             SetInterpolated(!isLocal);                 // remote follows snapshots; local drives via KCC
 

@@ -42,6 +42,16 @@ namespace Arcane_Aegis.Entities
         /// <summary>Local players drive their own transform (KCC), so interpolation is turned off for them.</summary>
         public void SetInterpolated(bool on) => _interpolate = on;
 
+        /// <summary>
+        /// Configures the view right after spawn. Base = REMOTE setup (snapshot interpolation + animation driven
+        /// by the network). <see cref="PlayerView"/> overrides this to wire the LOCAL control stack when isLocal.
+        /// </summary>
+        public virtual void Spawn(bool isLocal)
+        {
+            SetInterpolated(!isLocal);
+            if (characterAnimator != null) characterAnimator.UseNetworkSource();
+        }
+
         /// <summary>Updates the follow target, animation state, and windowed networked speed.</summary>
         public void SetTarget(Vector3 position, float yaw, MovementState state)
         {
