@@ -31,7 +31,7 @@ namespace Arcane_Aegis.Controllers.Combat
         {
             if (input == null) input = GetComponent<PlayerInput>();
             if (animator == null) animator = GetComponentInChildren<CharacterAnimator>();
-            _net = FindAnyObjectByType<NetClient>();
+            _net = NetClient.Instance ?? FindAnyObjectByType<NetClient>();
         }
 
         private void Update()

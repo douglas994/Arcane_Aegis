@@ -2844,10 +2844,10 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 238500059}
-  - component: {fileID: 238500058}
+  - component: {fileID: 238500060}
   - component: {fileID: 238500057}
   m_Layer: 0
-  m_Name: NetClient
+  m_Name: World
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -2869,22 +2869,6 @@ MonoBehaviour:
   typePrefabs:
   - type: 0
     prefab: {fileID: 0}
---- !u!114 &238500058
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 238500056}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 167f23f8255362840b8c1fe3c45752b8, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::Arcane_Aegis.Network.NetClient
-  host: 127.0.0.1
-  port: 47100
-  username: Hero
-  entities: {fileID: 238500057}
 --- !u!4 &238500059
 Transform:
   m_ObjectHideFlags: 0
@@ -2900,6 +2884,18 @@ Transform:
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &238500060
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 238500056}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 22d4fd054335dbf4294e4b774abeb7fc, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::Arcane_Aegis.Network.WorldEntry
 --- !u!1 &240700994
 GameObject:
   m_ObjectHideFlags: 0

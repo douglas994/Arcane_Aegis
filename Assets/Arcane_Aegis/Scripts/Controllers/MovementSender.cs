@@ -20,7 +20,7 @@ namespace Arcane_Aegis.Controllers
         private void Start()
         {
             if (fsm == null) fsm = GetComponent<LocomotionStateMachine>();
-            if (net == null) net = FindAnyObjectByType<NetClient>();
+            if (net == null) net = NetClient.Instance ?? FindAnyObjectByType<NetClient>();
         }
 
         private void Update()

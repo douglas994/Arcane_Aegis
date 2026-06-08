@@ -545,13 +545,25 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: a3b9ebddd6a430145be84b564c09e245, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::Arcane_Aegis.UI.ServerSelectScreen
-  master: {fileID: 461711554}
+  master: {fileID: 0}
   listContainer: {fileID: 523277847}
   rowPrefab: {fileID: 3586511167479545760, guid: 0f1e7b919b3f22e47bb30cbb265c4927, type: 3}
   statusText: {fileID: 465841483}
   onServerChosen:
     m_PersistentCalls:
-      m_Calls: []
+      m_Calls:
+      - m_Target: {fileID: 1122567547}
+        m_TargetAssemblyTypeName: Arcane_Aegis.UI.SceneLoader, Assembly-CSharp
+        m_MethodName: Load
+        m_Mode: 5
+        m_Arguments:
+          m_ObjectArgument: {fileID: 0}
+          m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
+          m_IntArgument: 0
+          m_FloatArgument: 0
+          m_StringArgument: Character_Selection
+          m_BoolArgument: 0
+        m_CallState: 2
 --- !u!1 &267098741
 GameObject:
   m_ObjectHideFlags: 0
@@ -933,7 +945,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 461711555}
-  - component: {fileID: 461711554}
+  - component: {fileID: 461711557}
   m_Layer: 0
   m_Name: APIClient
   m_TagString: Untagged
@@ -941,20 +953,6 @@ GameObject:
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
   m_IsActive: 1
---- !u!114 &461711554
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 461711553}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 7197047d1b35dd040a3818177d5e00f7, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::Arcane_Aegis.Network.MasterClient
-  host: 127.0.0.1
-  port: 47200
 --- !u!4 &461711555
 Transform:
   m_ObjectHideFlags: 0
@@ -970,6 +968,22 @@ Transform:
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &461711557
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 461711553}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 167f23f8255362840b8c1fe3c45752b8, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::Arcane_Aegis.Network.NetClient
+  host: 127.0.0.1
+  port: 47100
+  username: Hero
+  entities: {fileID: 0}
 --- !u!1 &465841481
 GameObject:
   m_ObjectHideFlags: 0
@@ -3754,6 +3768,65 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1106524670}
   m_CullTransparentMesh: 1
+--- !u!1 &1122567546
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1122567549}
+  - component: {fileID: 1122567548}
+  - component: {fileID: 1122567547}
+  m_Layer: 0
+  m_Name: Master
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!114 &1122567547
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1122567546}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 01e88664ee4d2a4419624cdae81129d7, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::Arcane_Aegis.UI.SceneLoader
+--- !u!114 &1122567548
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1122567546}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 7197047d1b35dd040a3818177d5e00f7, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::Arcane_Aegis.Network.MasterClient
+  host: 127.0.0.1
+  port: 47200
+--- !u!4 &1122567549
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1122567546}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 954.4281, y: 533.37085, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &1141342790
 GameObject:
   m_ObjectHideFlags: 0
@@ -7156,7 +7229,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 2876820e91a62484b80994fae2b76faf, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::Arcane_Aegis.UI.AuthScreen
-  master: {fileID: 461711554}
+  master: {fileID: 0}
   loginPanel: {fileID: 1026227667}
   registerPanel: {fileID: 958743124}
   loginUsername: {fileID: 1188160349}
@@ -7215,3 +7288,4 @@ SceneRoots:
   - {fileID: 2109377717}
   - {fileID: 21491875}
   - {fileID: 461711555}
+  - {fileID: 1122567549}

@@ -3,6 +3,7 @@ using UnityEngine;
 using ArcaneShared.Enums;
 using ArcaneShared.Models;
 using ArcaneShared.Protocol.ServerToClient;
+using Arcane_Aegis.Network;
 
 namespace Arcane_Aegis.Entities
 {
@@ -25,6 +26,9 @@ namespace Arcane_Aegis.Entities
 
         /// <summary>Our own player view (set on login). The HUD / action-bar read vitals + combat through this.</summary>
         public PlayerView Local { get; private set; }
+
+        // Bind this scene's manager to the persistent connection so entity packets route here (World/Dungeon).
+        private void Start() => NetClient.Instance?.SetEntityManager(this);
 
         /// <summary>Spawns another player/entity (driven by snapshots).</summary>
         public void SpawnRemote(S2C_SpawnEntity data)

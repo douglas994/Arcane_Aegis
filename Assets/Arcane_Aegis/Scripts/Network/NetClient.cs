@@ -1,3 +1,4 @@
+using System;
 using System.Net.Sockets;
 using UnityEngine;
 using NetworkLibrary;
@@ -33,28 +34,55 @@ namespace Arcane_Aegis.Network
         private readonly Listener _listener = new();
         private ClientPacketRouter _router;
 
+        /// <summary>The one persistent connection (singleton, survives scene loads). Scene scripts use this.</summary>
+        public static NetClient Instance { get; private set; }
+
+        /// <summary>True once connected to the ArcaneServer (char-phase sends are allowed; gameplay sends need a spawned Local).</summary>
+        public bool Connected => _server != null;
+
+        /// <summary>Raised once connected + handshaked (so the lobby screen can request data only when ready).</summary>
+        public event Action OnConnectedToServer;
+
+        // Character-lobby events (raised on the main thread by the handlers).
+        public event Action<CreationOption[], CreationOption[]> OnCreationData; // (races, classes)
+        public event Action<CharacterSummary[]> OnCharacterList;
+        public event Action<CharCreateResult> OnCharacterCreateResult;
+
         private void Awake()
         {
-            // Keep running when the window loses focus — otherwise a second test instance freezes,
-            // stops sending pings, and the server times it out (PeerDisconnected).
+            if (Instance != null && Instance != this) { Destroy(gameObject); return; } // keep the one persistent client
+            Instance = this;
+            DontDestroyOnLoad(gameObject);
+
+            // Keep running when the window loses focus (a backgrounded instance stops pinging → server times it out).
             Application.runInBackground = true;
             _listener.Owner = this;
-
-            if (entities == null) entities = FindAnyObjectByType<EntityManager>();
-            if (entities == null) Debug.LogError("[NetClient] No EntityManager in the scene — entities won't spawn.");
-        }
-
-        private void Start()
-        {
-            _router = BuildRouter();
 
             _net = new NetManager(_listener, TransportType.Udp)
             {
                 ConnectionKey = NetConstants.ConnectionKey,
                 ProtocolVersion = NetConstants.ProtocolVersion,
             };
-            _net.Connect(host, port);
-            Debug.Log($"[NetClient] connecting to {host}:{port} ...");
+            if (entities == null) entities = FindAnyObjectByType<EntityManager>();
+            _router = BuildRouter();
+        }
+
+        /// <summary>Connects to a zone server (called after the Master returns the chosen realm's address). The
+        /// connection then persists across scenes (lobby → world).</summary>
+        public void ConnectTo(string serverHost, int serverPort)
+        {
+            host = serverHost;
+            port = serverPort;
+            _net.Connect(serverHost, serverPort);
+            Debug.Log($"[NetClient] connecting to {serverHost}:{serverPort} …");
+        }
+
+        /// <summary>Binds the current scene's EntityManager (World/Dungeon) so entity packets route to it. The
+        /// connection survives scene loads; the manager is per-scene, so it re-binds on load.</summary>
+        public void SetEntityManager(EntityManager em)
+        {
+            entities = em;
+            _router = BuildRouter(); // rebuild so the entity handlers use the new manager
         }
 
         private ClientPacketRouter BuildRouter()
@@ -67,11 +95,19 @@ namespace Arcane_Aegis.Network
             router.Register(new StateUpdateHandler(entities));
             router.Register(new AbilityCastHandler(entities));
             router.Register(new CombatEventHandler(entities));
+            router.Register(new CreationDataHandler((races, classes) => OnCreationData?.Invoke(races, classes)));
+            router.Register(new CharacterListHandler(chars => OnCharacterList?.Invoke(chars)));
+            router.Register(new CharacterCreateResultHandler(result => OnCharacterCreateResult?.Invoke(result)));
             return router;
         }
 
         private void Update() => _net?.PollEvents();
-        private void OnDestroy() => _net?.Stop();
+
+        private void OnDestroy()
+        {
+            if (Instance == this) Instance = null;
+            _net?.Stop();
+        }
 
         // ── send (transport only; game logic decides WHEN to call these) ──
 
@@ -96,6 +132,36 @@ namespace Arcane_Aegis.Network
 
         private bool CanSend => _server != null && entities != null && entities.Local != null;
 
+        // ── character lobby (before entering the world; no spawned Local yet, so gated only on Connected) ──
+
+        /// <summary>Asks the server for the data-driven race/class catalog (for the create screen).</summary>
+        public void RequestCreationData()
+        {
+            if (_server == null) return;
+            Send(new C2S_RequestCreationData(), DeliveryMethod.ReliableOrdered);
+        }
+
+        /// <summary>Asks the server for this account's characters (account = the authenticated connection).</summary>
+        public void RequestCharacters()
+        {
+            if (_server == null) return;
+            Send(new C2S_RequestCharacters(), DeliveryMethod.ReliableOrdered);
+        }
+
+        /// <summary>Asks the server to create a character (server validates + persists via the DB).</summary>
+        public void CreateCharacter(string name, string raceId, string classId)
+        {
+            if (_server == null) return;
+            Send(new C2S_CreateCharacter { Name = name, RaceId = raceId, ClassId = classId }, DeliveryMethod.ReliableOrdered);
+        }
+
+        /// <summary>Spawns the chosen character into the world (call from the World scene; server verifies ownership).</summary>
+        public void EnterWorld(uint characterId)
+        {
+            if (_server == null) return;
+            Send(new C2S_EnterWorld { CharacterId = characterId }, DeliveryMethod.ReliableOrdered);
+        }
+
         private void Send<T>(in T packet, DeliveryMethod method) where T : IPacket
         {
             var buffer = new BitBuffer();
@@ -115,8 +181,11 @@ namespace Arcane_Aegis.Network
         private void OnConnected(NetPeer peer)
         {
             _server = peer;
-            Send(new C2S_Login { Username = username }, DeliveryMethod.ReliableOrdered);
-            Debug.Log("[NetClient] connected → sent login");
+            // Authenticate with the session token (the Master pre-registered it at this zone). The server resolves
+            // the token → account; no client-sent account. No auto-spawn — the character lobby runs first.
+            Send(new C2S_Handshake { SessionToken = ClientSession.Token }, DeliveryMethod.ReliableOrdered);
+            Debug.Log("[NetClient] connected → sent handshake (token)");
+            OnConnectedToServer?.Invoke();
         }
 
         private void OnDisconnected(DisconnectReason reason)

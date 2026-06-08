@@ -40,6 +40,8 @@ namespace Arcane_Aegis.Network
         public event Action<bool, AuthReason> OnAuthResult;
         /// <summary>Raised on the main thread with the available servers (empty = bad token / none).</summary>
         public event Action<ServerInfo[]> OnServerList;
+        /// <summary>Raised when the Master answers a server pick: (ok, host, port, reason). On ok, connect the NetClient there.</summary>
+        public event Action<bool, string, ushort, EnterReason> OnEnterServer;
 
         private void Awake()
         {
@@ -72,6 +74,15 @@ namespace Arcane_Aegis.Network
         public void RequestServerList()
             => Send(new C2S_RequestServerList { Token = Token });
 
+        /// <summary>Picks a realm. The Master validates the token, pre-registers the session at that zone, and
+        /// replies (OnEnterServer) with its address.</summary>
+        public void SelectServer(byte serverId)
+        {
+            SelectedServerId = serverId;
+            ClientSession.ServerId = serverId;
+            Send(new C2S_SelectServer { Token = Token, ServerId = serverId });
+        }
+
         private void Send<T>(in T packet) where T : IPacket
         {
             if (_server == null) { Debug.LogWarning("[MasterClient] not connected yet"); return; }
@@ -100,7 +111,13 @@ namespace Arcane_Aegis.Network
                 {
                     var p = new S2C_AuthResult();
                     p.Deserialize(ref reader);
-                    if (p.Ok) { Token = p.Token; AccountId = p.AccountId; }
+                    if (p.Ok)
+                    {
+                        Token = p.Token;
+                        AccountId = p.AccountId;
+                        ClientSession.AccountId = p.AccountId; // carry across scenes (char screen needs it)
+                        ClientSession.Token = p.Token;
+                    }
                     OnAuthResult?.Invoke(p.Ok, (AuthReason)p.Reason);
                     break;
                 }
@@ -109,6 +126,13 @@ namespace Arcane_Aegis.Network
                     var p = new S2C_ServerList();
                     p.Deserialize(ref reader);
                     OnServerList?.Invoke(p.Servers ?? Array.Empty<ServerInfo>());
+                    break;
+                }
+                case PacketId.S2C_EnterServer:
+                {
+                    var p = new S2C_EnterServer();
+                    p.Deserialize(ref reader);
+                    OnEnterServer?.Invoke(p.Ok, p.Host, p.Port, (EnterReason)p.Reason);
                     break;
                 }
             }
