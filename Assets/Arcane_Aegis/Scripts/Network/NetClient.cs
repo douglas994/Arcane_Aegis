@@ -44,7 +44,7 @@ namespace Arcane_Aegis.Network
         public event Action OnConnectedToServer;
 
         // Character-lobby events (raised on the main thread by the handlers).
-        public event Action<CreationOption[], CreationOption[]> OnCreationData; // (races, classes)
+        public event Action<CreationOption[], CreationOption[], CreationOption[]> OnCreationData; // (races, classes, genders)
         public event Action<CharacterSummary[]> OnCharacterList;
         public event Action<CharCreateResult> OnCharacterCreateResult;
 
@@ -95,7 +95,7 @@ namespace Arcane_Aegis.Network
             router.Register(new StateUpdateHandler(entities));
             router.Register(new AbilityCastHandler(entities));
             router.Register(new CombatEventHandler(entities));
-            router.Register(new CreationDataHandler((races, classes) => OnCreationData?.Invoke(races, classes)));
+            router.Register(new CreationDataHandler((races, classes, genders) => OnCreationData?.Invoke(races, classes, genders)));
             router.Register(new CharacterListHandler(chars => OnCharacterList?.Invoke(chars)));
             router.Register(new CharacterCreateResultHandler(result => OnCharacterCreateResult?.Invoke(result)));
             return router;
@@ -149,10 +149,10 @@ namespace Arcane_Aegis.Network
         }
 
         /// <summary>Asks the server to create a character (server validates + persists via the DB).</summary>
-        public void CreateCharacter(string name, string raceId, string classId)
+        public void CreateCharacter(string name, string raceId, string classId, string genderId)
         {
             if (_server == null) return;
-            Send(new C2S_CreateCharacter { Name = name, RaceId = raceId, ClassId = classId }, DeliveryMethod.ReliableOrdered);
+            Send(new C2S_CreateCharacter { Name = name, RaceId = raceId, ClassId = classId, GenderId = genderId }, DeliveryMethod.ReliableOrdered);
         }
 
         /// <summary>Spawns the chosen character into the world (call from the World scene; server verifies ownership).</summary>
