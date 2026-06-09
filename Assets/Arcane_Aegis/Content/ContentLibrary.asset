@@ -1,0 +1,27 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 89b8729a56bfd084d8bee28433d28186, type: 3}
+  m_Name: ContentLibrary
+  m_EditorClassIdentifier: Assembly-CSharp::Arcane_Aegis.Content.ContentLibrary
+  classes:
+  - {fileID: 11400000, guid: acd246403db5f6c4fbf9ce4a80d80ca7, type: 2}
+  - {fileID: 11400000, guid: 05cb54415262b4549a31c408e718f9a4, type: 2}
+  - {fileID: 11400000, guid: 01860afa2b555f342a0b6324cf7d9dd0, type: 2}
+  - {fileID: 11400000, guid: 656dcd5d4b7ced2459e0c7b1a145ca07, type: 2}
+  races:
+  - {fileID: 11400000, guid: 1cd84774f4c472a4896fb17da030a461, type: 2}
+  - {fileID: 11400000, guid: dd219212bd97b0e4c8d4633cf12a629a, type: 2}
+  - {fileID: 11400000, guid: 2e1d08e574474b34fb812ff98bb00ca3, type: 2}
+  - {fileID: 11400000, guid: ccfaa506d0f1c7549a8c1149a5c5e4a1, type: 2}
+  genders:
+  - {fileID: 11400000, guid: 6e8f1dbbe0801894a869a25122cbd0e8, type: 2}
+  - {fileID: 11400000, guid: c6bac68af96079c4ea819c1e69a3b292, type: 2}

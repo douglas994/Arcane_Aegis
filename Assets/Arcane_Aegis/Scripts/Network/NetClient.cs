@@ -162,6 +162,13 @@ namespace Arcane_Aegis.Network
             Send(new C2S_EnterWorld { CharacterId = characterId }, DeliveryMethod.ReliableOrdered);
         }
 
+        /// <summary>Deletes one of this account's characters (server verifies ownership, then re-sends the list).</summary>
+        public void DeleteCharacter(uint characterId)
+        {
+            if (_server == null) return;
+            Send(new C2S_DeleteCharacter { CharacterId = characterId }, DeliveryMethod.ReliableOrdered);
+        }
+
         private void Send<T>(in T packet, DeliveryMethod method) where T : IPacket
         {
             var buffer = new BitBuffer();

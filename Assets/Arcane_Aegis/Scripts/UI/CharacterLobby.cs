@@ -22,10 +22,13 @@ namespace Arcane_Aegis.UI
         [SerializeField] private GameObject createPanel;
         [SerializeField] private GameObject selectPanel;
 
-        [Header("Create — list containers (filled at runtime)")]
+        [Header("Create — list containers (filled at runtime; leave None if using fixed buttons)")]
         [SerializeField] private Transform classContainer;
         [SerializeField] private Transform raceContainer;
         [SerializeField] private Transform genderContainer;
+
+        [Header("Create — your FIXED option buttons (auto-wired + highlighted; put an OptionButton on each)")]
+        [SerializeField] private OptionButton[] optionButtons;
 
         [Header("Create — widgets")]
         [SerializeField] private TMP_InputField nameInput;
@@ -46,7 +49,6 @@ namespace Arcane_Aegis.UI
         [SerializeField] private CharacterSlot[] slots;
         [SerializeField] private TMP_Text selectStatus;
         [SerializeField] private Button enterButton;
-        [SerializeField] private Button newButton;
         [SerializeField] private Button deleteButton;
 
         [Header("Optional: your styled option-button prefab (else a plain one is built)")]
@@ -70,8 +72,15 @@ namespace Arcane_Aegis.UI
             Wire(createButton, OnCreateClicked);
             Wire(backButton, ShowSelect);
             Wire(enterButton, OnEnterClicked);
-            Wire(newButton, ShowCreate);
             Wire(deleteButton, OnDeleteClicked);
+
+            if (optionButtons != null)
+                foreach (var ob in optionButtons)
+                    if (ob != null && ob.Button != null)
+                    {
+                        OptionButton cap = ob;
+                        ob.Button.onClick.AddListener(() => Select(cap.kind, cap.id));
+                    }
         }
 
         private void OnEnable()
@@ -129,9 +138,26 @@ namespace Arcane_Aegis.UI
         }
 
         // ── hook YOUR fixed buttons here (type the id in the button's OnClick); generated buttons call these too ──
-        public void SelectClass(string id)  { _classId = id;  HighlightById(_classBtns, _classes, id); ShowClassInfo(id); }
-        public void SelectRace(string id)   { _raceId = id;   HighlightById(_raceBtns, _races, id); }
-        public void SelectGender(string id) { _genderId = id; HighlightById(_genderBtns, _genders, id); }
+        public void SelectClass(string id)  { _classId = id;  HighlightById(_classBtns, _classes, id);  HighlightOptions(OptionButton.Kind.Class, id);  ShowClassInfo(id); }
+        public void SelectRace(string id)   { _raceId = id;   HighlightById(_raceBtns, _races, id);    HighlightOptions(OptionButton.Kind.Race, id); }
+        public void SelectGender(string id) { _genderId = id; HighlightById(_genderBtns, _genders, id); HighlightOptions(OptionButton.Kind.Gender, id); }
+
+        private void Select(OptionButton.Kind kind, string id)
+        {
+            switch (kind)
+            {
+                case OptionButton.Kind.Class: SelectClass(id); break;
+                case OptionButton.Kind.Race: SelectRace(id); break;
+                case OptionButton.Kind.Gender: SelectGender(id); break;
+            }
+        }
+
+        private void HighlightOptions(OptionButton.Kind kind, string id)
+        {
+            if (optionButtons == null) return;
+            foreach (var ob in optionButtons)
+                if (ob != null && ob.kind == kind) ob.SetSelected(ob.id == id);
+        }
 
         private void OnCharacterList(CharacterSummary[] chars)
         {
@@ -157,6 +183,10 @@ namespace Arcane_Aegis.UI
                 }
             }
             SetText(selectStatus, _chars.Length == 0 ? "Nenhum personagem. Crie um!" : string.Empty);
+
+            // No characters → go straight to Creation; otherwise show the Selection screen.
+            if (_chars.Length == 0) ShowCreate();
+            else ShowSelect();
         }
 
         private static void WireSlot(CharacterSlot slot, UnityEngine.Events.UnityAction action)
@@ -199,8 +229,11 @@ namespace Arcane_Aegis.UI
 
         public void OnDeleteClicked()
         {
-            // TODO: delete-character protocol (C2S_DeleteCharacter). For now just a hint.
-            SetText(selectStatus, "Excluir personagem ainda não implementado.");
+            if (_selectedSlot < 0) { SetText(selectStatus, "Escolha um personagem pra excluir."); return; }
+            if (_net == null || !_net.Connected) return;
+            var c = _chars[_selectedSlot];
+            SetText(selectStatus, $"Excluindo {c.Name}…");
+            _net.DeleteCharacter(c.Id); // server deletes + re-sends the list → slots refresh
         }
 
         private void SelectSlot(int idx)

@@ -2761,7 +2761,7 @@ GameObject:
   - component: {fileID: 958743127}
   - component: {fileID: 958743126}
   m_Layer: 5
-  m_Name: CEATE ACCOUNT
+  m_Name: CREATE ACCOUNT
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
