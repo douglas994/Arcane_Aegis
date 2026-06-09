@@ -11,9 +11,9 @@ using Arcane_Aegis.Network;
 namespace Arcane_Aegis.UI
 {
     /// <summary>
-    /// Character lobby controller (ARPG style). Reads UI references from the scene (built by the CharacterUIBuilder
-    /// editor tool, or wired by hand) and fills the dynamic lists from the server — classes/races/genders into the
-    /// create panel, characters into the select panel. Swap the visuals freely; this only needs the references.
+    /// Character lobby controller (ARPG style). Reads UI references from the scene (wired by hand) and fills the
+    /// dynamic lists from the server — classes/races/genders into the create panel, characters into the select
+    /// panel. Swap the visuals freely; this only needs the references.
     /// Option buttons clone <see cref="optionButtonPrefab"/> if set, else a plain button is created.
     /// </summary>
     public class CharacterLobby : MonoBehaviour
