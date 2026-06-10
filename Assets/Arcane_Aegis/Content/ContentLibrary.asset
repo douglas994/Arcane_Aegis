@@ -25,4 +25,5 @@ MonoBehaviour:
   genders:
   - {fileID: 11400000, guid: 6e8f1dbbe0801894a869a25122cbd0e8, type: 2}
   - {fileID: 11400000, guid: c6bac68af96079c4ea819c1e69a3b292, type: 2}
-  templates: []
+  templates:
+  - {fileID: 11400000, guid: dcdaf2157f7bb0f47a7846bf2417e13e, type: 2}

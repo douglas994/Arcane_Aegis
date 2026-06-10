@@ -6,6 +6,7 @@ using UnityEngine.SceneManagement;
 using TMPro;
 using ArcaneShared.Enums;
 using ArcaneShared.Models;
+using Arcane_Aegis.Content;
 using Arcane_Aegis.Network;
 
 namespace Arcane_Aegis.UI
@@ -53,6 +54,10 @@ namespace Arcane_Aegis.UI
 
         [Header("Optional: your styled option-button prefab (else a plain one is built)")]
         [SerializeField] private Button optionButtonPrefab;
+
+        [Header("3D preview (optional — assign a ContentLibrary + a CharacterPreview)")]
+        [SerializeField] private ContentLibrary library;
+        [SerializeField] private CharacterPreview preview;
 
         private NetClient _net;
         private CreationOption[] _races = Array.Empty<CreationOption>();
@@ -138,9 +143,9 @@ namespace Arcane_Aegis.UI
         }
 
         // ── hook YOUR fixed buttons here (type the id in the button's OnClick); generated buttons call these too ──
-        public void SelectClass(string id)  { _classId = id;  HighlightById(_classBtns, _classes, id);  HighlightOptions(OptionButton.Kind.Class, id);  ShowClassInfo(id); }
-        public void SelectRace(string id)   { _raceId = id;   HighlightById(_raceBtns, _races, id);    HighlightOptions(OptionButton.Kind.Race, id); }
-        public void SelectGender(string id) { _genderId = id; HighlightById(_genderBtns, _genders, id); HighlightOptions(OptionButton.Kind.Gender, id); }
+        public void SelectClass(string id)  { _classId = id;  HighlightById(_classBtns, _classes, id);  HighlightOptions(OptionButton.Kind.Class, id);  ShowClassInfo(id); RefreshCreatePreview(); }
+        public void SelectRace(string id)   { _raceId = id;   HighlightById(_raceBtns, _races, id);    HighlightOptions(OptionButton.Kind.Race, id); RefreshCreatePreview(); }
+        public void SelectGender(string id) { _genderId = id; HighlightById(_genderBtns, _genders, id); HighlightOptions(OptionButton.Kind.Gender, id); RefreshCreatePreview(); }
 
         private void Select(OptionButton.Kind kind, string id)
         {
@@ -246,6 +251,7 @@ namespace Arcane_Aegis.UI
             SetText(infoPower, "—");
             SetText(infoClan, "—");
             SetText(infoLocal, $"{c.RaceId} / {c.ClassId}");
+            ShowPreviewFor(c.RaceId, c.ClassId, c.GenderId);
         }
 
         private void ShowClassInfo(string id)
@@ -254,6 +260,23 @@ namespace Arcane_Aegis.UI
             foreach (var c in _classes) if (c.Id == id) { display = c.Name; break; }
             SetText(selectedClassName, display);
             SetText(selectedClassDesc, string.Empty); // descriptions come from content later
+        }
+
+        private void RefreshCreatePreview() => ShowPreviewFor(_raceId, _classId, _genderId);
+
+        /// <summary>Resolve the (race+class) CharacterTemplate, take the gender's model, and show it in the preview.</summary>
+        private void ShowPreviewFor(string raceId, string classId, string genderId)
+        {
+            if (preview == null || library == null || library.templates == null) return;
+            var tpl = library.templates.Find(t => t != null
+                && t.race != null && t.race.id == raceId
+                && t.characterClass != null && t.characterClass.id == classId);
+            // Dev fallback (few templates so far): no exact race+class match → show the first template that has a model.
+            if (tpl == null) tpl = library.templates.Find(t => t != null && t.genders != null && t.genders.Exists(g => g != null && g.model != null));
+            if (tpl == null) { preview.Show(null); return; }
+            var gm = tpl.GetGender(genderId);
+            if (gm == null || gm.model == null) gm = tpl.genders.Find(g => g != null && g.model != null); // any gender with a model
+            preview.Show(gm != null ? gm.model : null);
         }
 
         private static void HighlightById(List<Button> store, CreationOption[] opts, string id)

@@ -1732,7 +1732,7 @@ Transform:
   m_GameObject: {fileID: 7531496383920890079}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 9.6051, y: -0, z: 23.41522}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children:
@@ -1877,6 +1877,7 @@ MonoBehaviour:
   speedParam: Speed
   groundedParam: Grounded
   attackTrigger: Attack
+  deadParam: Dead
   speedDamp: 0.1
   maxSpeed: 7
 --- !u!114 &1388933930979981160
@@ -1927,6 +1928,7 @@ MonoBehaviour:
   speedWindow: 0.25
   characterAnimator: {fileID: 3546842684791674434}
   vitals: {fileID: -5879357210057163665}
+  deathHideDelay: 2
 --- !u!114 &-5879357210057163665
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -1955,7 +1957,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::Arcane_Aegis.Controllers.Combat.PlayerCombat
   basicAbilityId: 1
-  localCooldown: 0.4
+  defaultCooldown: 0.3
   input: {fileID: 6430173092718962970}
   animator: {fileID: 3546842684791674434}
 --- !u!1 &7622696344009132845
