@@ -23,7 +23,7 @@ namespace Arcane_Aegis.EditorTools
     public class ContentEditorWindow : EditorWindow, INetEventListener
     {
         [Serializable] private class ClassDto  { public string Id, Name; public int Str, Dex, Int, Vit, Spi, Luk, StrPerLevel, DexPerLevel, IntPerLevel, VitPerLevel, SpiPerLevel, LukPerLevel; }
-        [Serializable] private class RaceDto   { public string Id, Name, Element; public int Str, Dex, Int, Vit, Spi, Luk, Armor; }
+        [Serializable] private class RaceDto   { public string Id, Name, Element; public int Str, Dex, Int, Vit, Spi, Luk, Armor, HomeZoneId; }
         [Serializable] private class GenderDto { public string Id, Name; }
 
         /// <summary>A content category: an SO type + its folder + (optional) how to serialize it for the server.</summary>
@@ -138,6 +138,7 @@ namespace Arcane_Aegis.EditorTools
         {
             Id = r.id, Name = r.displayName, Element = r.element,
             Str = r.str, Dex = r.dex, Int = r.intel, Vit = r.vit, Spi = r.spi, Luk = r.luk, Armor = r.armor,
+            HomeZoneId = r.homeZoneId,
         };
         private static GenderDto ToDto(GenderDefinitionSO g) => new() { Id = g.id, Name = g.displayName };
 

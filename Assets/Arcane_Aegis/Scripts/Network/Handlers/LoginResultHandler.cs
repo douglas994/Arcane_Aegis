@@ -30,7 +30,7 @@ namespace Arcane_Aegis.Network.Handlers
 
             _spawned = true;
             var sp = new Vector3(p.SpawnPosition.X, p.SpawnPosition.Y, p.SpawnPosition.Z);
-            _entities.SpawnLocal(p.YourEntityId, _username, sp); // sets EntityManager.Local
+            _entities.SpawnLocal(p.YourEntityId, _username, sp, p.RaceId, p.ClassId, p.GenderId); // sets EntityManager.Local
         }
     }
 }

@@ -2865,10 +2865,11 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: d3f0034cd54ed054f8831795a49ac778, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::Arcane_Aegis.Entities.EntityManager
-  characterPrefab: {fileID: 7531496383920890079, guid: 06d310eadd79b244aa16a9674c9dfb24, type: 3}
+  characterPrefab: {fileID: 0}
   typePrefabs:
   - type: 0
     prefab: {fileID: 0}
+  library: {fileID: 11400000, guid: 776b912b7f8b41e45a9b69ae740e1eda, type: 2}
 --- !u!4 &238500059
 Transform:
   m_ObjectHideFlags: 0

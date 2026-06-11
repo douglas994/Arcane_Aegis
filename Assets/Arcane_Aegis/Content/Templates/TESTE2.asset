@@ -10,19 +10,19 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: bf5ce96161f0fa54eb4b8e5d37984ced, type: 3}
-  m_Name: Teste
+  m_Name: TESTE2
   m_EditorClassIdentifier: Assembly-CSharp::Arcane_Aegis.Content.CharacterTemplateSO
-  id: teste
-  displayName: Teste
-  race: {fileID: 11400000, guid: ccfaa506d0f1c7549a8c1149a5c5e4a1, type: 2}
-  characterClass: {fileID: 11400000, guid: 656dcd5d4b7ced2459e0c7b1a145ca07, type: 2}
+  id: teste2
+  displayName: TESTE2
+  race: {fileID: 11400000, guid: 2e1d08e574474b34fb812ff98bb00ca3, type: 2}
+  characterClass: {fileID: 11400000, guid: acd246403db5f6c4fbf9ce4a80d80ca7, type: 2}
   faction: Neutral
-  zoneId: veridia
-  spawnPosition: {x: 0, y: 0, z: 0}
+  zoneId: 2
+  spawnPosition: {x: 10, y: 0, z: 100}
   orientation: 0
   startingLevel: 1
   levelXpProfile: default
   genders:
   - gender: {fileID: 11400000, guid: c6bac68af96079c4ea819c1e69a3b292, type: 2}
-    model: {fileID: 7531496383920890079, guid: 47d309a35a644f64bb6adc7e5b93d105, type: 3}
+    model: {fileID: 7531496383920890079, guid: 637b195e0207bb24796dab60c09daffe, type: 3}
     icon: {fileID: 0}

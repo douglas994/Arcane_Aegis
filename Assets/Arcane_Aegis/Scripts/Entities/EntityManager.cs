@@ -4,6 +4,7 @@ using ArcaneShared.Enums;
 using ArcaneShared.Models;
 using ArcaneShared.Protocol.ServerToClient;
 using Arcane_Aegis.Network;
+using Arcane_Aegis.Content;
 
 namespace Arcane_Aegis.Entities
 {
@@ -19,8 +20,9 @@ namespace Arcane_Aegis.Entities
         public struct TypePrefab { public EntityType type; public GameObject prefab; }
 
         [Header("Prefabs")]
-        [SerializeField] private GameObject characterPrefab;   // default / player (PlayerView on root)
+        [SerializeField] private GameObject characterPrefab;   // default / player (PlayerView on root, with a "ModelMount" child)
         [SerializeField] private TypePrefab[] typePrefabs;     // per-EntityType overrides (fallback = characterPrefab)
+        [SerializeField] private ContentLibrary library;       // resolves a player's CharacterTemplate model (race+class+gender)
 
         private readonly Dictionary<ushort, EntityView> _views = new();
 
@@ -35,7 +37,7 @@ namespace Arcane_Aegis.Entities
         {
             if (_views.ContainsKey(data.EntityId)) return;
 
-            EntityView view = CreateView(data.EntityId, data.Name, data.Type);
+            EntityView view = CreateView(data.EntityId, data.Name, data.Type, data.RaceId, data.ClassId, data.GenderId);
             view.Id = data.EntityId;
             view.Type = data.Type;
             view.Spawn(isLocal: false);
@@ -46,9 +48,9 @@ namespace Arcane_Aegis.Entities
         }
 
         /// <summary>Spawns OUR own player at the SERVER-given spawn point (NetClient calls this on login).</summary>
-        public PlayerView SpawnLocal(ushort id, string name, Vector3 serverSpawn)
+        public PlayerView SpawnLocal(ushort id, string name, Vector3 serverSpawn, string raceId, string classId, string genderId)
         {
-            EntityView view = CreateView(id, name, EntityType.Player);
+            EntityView view = CreateView(id, name, EntityType.Player, raceId, classId, genderId);
             view.Id = id;
             view.Type = EntityType.Player;
             view.Spawn(isLocal: true);
@@ -89,17 +91,56 @@ namespace Arcane_Aegis.Entities
             if (_views.TryGetValue(id, out var view)) view.PlayAttack();
         }
 
-        private EntityView CreateView(ushort id, string name, EntityType type)
+        private EntityView CreateView(ushort id, string name, EntityType type, string raceId, string classId, string genderId)
         {
             GameObject prefab = PrefabFor(type);
-            GameObject go = prefab != null
-                ? Instantiate(prefab)
-                : GameObject.CreatePrimitive(PrimitiveType.Capsule);
+            GameObject model = (library != null && !string.IsNullOrEmpty(raceId)) ? library.ResolveModel(raceId, classId, genderId) : null;
+
+            GameObject go;
+            if (prefab != null)
+            {
+                go = Instantiate(prefab);
+                MountModel(go, model); // mount the data-driven model under "ModelMount"; gameplay stays on the prefab root
+            }
+            else if (model != null)
+            {
+                go = Instantiate(model); // no gameplay prefab assigned → the ContentLibrary model IS the entity (no capsule)
+            }
+            else
+            {
+                go = GameObject.CreatePrimitive(PrimitiveType.Capsule); // last resort only (no prefab AND no model)
+            }
             go.name = $"Entity_{id}_{name}";
 
             EntityView view = go.GetComponent<EntityView>();
-            if (view == null) view = go.AddComponent<PlayerView>(); // fallback so the capsule still works
+            if (view == null) view = go.AddComponent<PlayerView>(); // fallback so it still works
             return view;
+        }
+
+        /// <summary>Instantiates the resolved CharacterTemplate model under the prefab's "ModelMount" child (or the
+        /// root if absent), visual-only — the prefab root keeps the gameplay (PlayerView/KCC/Animator).</summary>
+        private void MountModel(GameObject root, GameObject model)
+        {
+            if (model == null) return;
+            Transform mount = FindDeepChild(root.transform, "ModelMount") ?? root.transform;
+            GameObject vis = Instantiate(model, mount);
+            vis.transform.localPosition = Vector3.zero;
+            vis.transform.localRotation = Quaternion.identity;
+
+            // Visual only: drop colliders/rigidbodies so they don't fight the root's physics (keep meshes + Animator).
+            foreach (var col in vis.GetComponentsInChildren<Collider>()) Destroy(col);
+            foreach (var rb in vis.GetComponentsInChildren<Rigidbody>()) Destroy(rb);
+        }
+
+        private static Transform FindDeepChild(Transform parent, string childName)
+        {
+            if (parent.name == childName) return parent;
+            for (int i = 0; i < parent.childCount; i++)
+            {
+                Transform found = FindDeepChild(parent.GetChild(i), childName);
+                if (found != null) return found;
+            }
+            return null;
         }
 
         /// <summary>The prefab for an entity type — a per-type override if assigned, else the default character prefab.</summary>

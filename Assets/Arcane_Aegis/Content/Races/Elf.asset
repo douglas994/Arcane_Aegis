@@ -22,6 +22,6 @@ MonoBehaviour:
   spi: 5
   luk: 5
   armor: 0
+  homeZoneId: 2
   icon: {fileID: 0}
-  modelPrefab: {fileID: 0}
   description: 

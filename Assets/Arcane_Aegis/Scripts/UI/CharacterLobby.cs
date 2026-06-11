@@ -121,8 +121,20 @@ namespace Arcane_Aegis.UI
         }
 
         // ── panels (also hooked to back/new buttons) ──
-        public void ShowCreate() { if (createPanel) createPanel.SetActive(true); if (selectPanel) selectPanel.SetActive(false); }
-        public void ShowSelect() { if (createPanel) createPanel.SetActive(false); if (selectPanel) selectPanel.SetActive(true); }
+        public void ShowCreate() { if (createPanel) createPanel.SetActive(true); if (selectPanel) selectPanel.SetActive(false); RefreshCreatePreview(); }
+        public void ShowSelect()
+        {
+            if (createPanel) createPanel.SetActive(false);
+            if (selectPanel) selectPanel.SetActive(true);
+            if (preview == null) return;
+            // The select screen shows the SELECTED character — or nothing (never the leftover create model).
+            if (_selectedSlot >= 0 && _selectedSlot < _chars.Length)
+            {
+                var c = _chars[_selectedSlot];
+                ShowPreviewFor(c.RaceId, c.ClassId, c.GenderId);
+            }
+            else preview.Show(null);
+        }
 
         // ── server events ──
         private void OnCreationData(CreationOption[] races, CreationOption[] classes, CreationOption[] genders)
@@ -189,9 +201,10 @@ namespace Arcane_Aegis.UI
             }
             SetText(selectStatus, _chars.Length == 0 ? "Nenhum personagem. Crie um!" : string.Empty);
 
-            // No characters → go straight to Creation; otherwise show the Selection screen.
+            // No characters → Creation; otherwise Selection with the LAST-PLAYED character pre-selected (the list
+            // comes ordered by LastPlayedAt DESC, so slot 0 is the most recent → preview is never empty).
             if (_chars.Length == 0) ShowCreate();
-            else ShowSelect();
+            else { ShowSelect(); SelectSlot(0); }
         }
 
         private static void WireSlot(CharacterSlot slot, UnityEngine.Events.UnityAction action)
@@ -262,21 +275,17 @@ namespace Arcane_Aegis.UI
             SetText(selectedClassDesc, string.Empty); // descriptions come from content later
         }
 
-        private void RefreshCreatePreview() => ShowPreviewFor(_raceId, _classId, _genderId);
+        private void RefreshCreatePreview()
+        {
+            if (createPanel != null && !createPanel.activeSelf) return; // don't leak the create model onto the select screen
+            ShowPreviewFor(_raceId, _classId, _genderId);
+        }
 
         /// <summary>Resolve the (race+class) CharacterTemplate, take the gender's model, and show it in the preview.</summary>
         private void ShowPreviewFor(string raceId, string classId, string genderId)
         {
-            if (preview == null || library == null || library.templates == null) return;
-            var tpl = library.templates.Find(t => t != null
-                && t.race != null && t.race.id == raceId
-                && t.characterClass != null && t.characterClass.id == classId);
-            // Dev fallback (few templates so far): no exact race+class match → show the first template that has a model.
-            if (tpl == null) tpl = library.templates.Find(t => t != null && t.genders != null && t.genders.Exists(g => g != null && g.model != null));
-            if (tpl == null) { preview.Show(null); return; }
-            var gm = tpl.GetGender(genderId);
-            if (gm == null || gm.model == null) gm = tpl.genders.Find(g => g != null && g.model != null); // any gender with a model
-            preview.Show(gm != null ? gm.model : null);
+            if (preview == null || library == null) return;
+            preview.Show(library.ResolveModel(raceId, classId, genderId)); // same lookup the world spawn uses
         }
 
         private static void HighlightById(List<Button> store, CreationOption[] opts, string id)
