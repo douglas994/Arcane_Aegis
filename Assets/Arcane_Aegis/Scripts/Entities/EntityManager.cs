@@ -42,7 +42,8 @@ namespace Arcane_Aegis.Entities
         /// <summary>Spawns another player/entity (driven by snapshots).</summary>
         public void SpawnRemote(S2C_SpawnEntity data)
         {
-            if (_views.ContainsKey(data.EntityId)) return;
+            if (_views.ContainsKey(data.EntityId)) { Debug.Log($"[DIAG] SpawnRemote IGNORED id={data.EntityId} (already in _views) — name={data.Name}"); return; }
+            Debug.Log($"[DIAG] SpawnRemote id={data.EntityId} name={data.Name} serverPos=({data.Position.X:0},{data.Position.Z:0}) offset=({ZoneOffset.x:0},{ZoneOffset.z:0})");
 
             EntityView view = CreateView(data.EntityId, data.Name, data.Type, data.RaceId, data.ClassId, data.GenderId);
             view.Id = data.EntityId;
@@ -81,6 +82,7 @@ namespace Arcane_Aegis.Entities
 
         public void Despawn(ushort id)
         {
+            Debug.Log($"[DIAG] Despawn id={id} (known={_views.ContainsKey(id)})");
             if (!_views.TryGetValue(id, out var view)) return;
             if (Local != null && Local.Id == id) Local = null;
             Destroy(view.gameObject);
@@ -100,6 +102,7 @@ namespace Arcane_Aegis.Entities
             var stale = new List<ushort>();
             foreach (var kv in _views) if (kv.Key != Local.Id) stale.Add(kv.Key);
             foreach (ushort id in stale) { Destroy(_views[id].gameObject); _views.Remove(id); }
+            Debug.Log($"[DIAG] RespawnLocal: oldLocalId={Local.Id} newId={newId} clearedStale={stale.Count} offset=({zoneOffset.x:0},{zoneOffset.z:0})");
 
             // Re-key the local view to the new server-assigned id (snapshots/corrections reference it).
             _views.Remove(Local.Id);
