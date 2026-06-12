@@ -29,6 +29,13 @@ namespace Arcane_Aegis.Entities
         /// <summary>Our own player view (set on login). The HUD / action-bar read vitals + combat through this.</summary>
         public PlayerView Local { get; private set; }
 
+        /// <summary>This continent's world offset (grid × worldSize). The server sends LOCAL coords; we render in
+        /// GLOBAL (local + offset). Set on spawn/zone-change from S2C_LoginResult so a border crossing keeps the
+        /// player's global position continuous → no teleport.</summary>
+        public Vector3 ZoneOffset { get; private set; }
+        public Vector3 ToWorld(Vector3 serverLocal) => serverLocal + ZoneOffset;
+        public Vector3 ToServer(Vector3 world) => world - ZoneOffset;
+
         // Bind this scene's manager to the persistent connection so entity packets route here (World/Dungeon).
         private void Start() => NetClient.Instance?.SetEntityManager(this);
 
@@ -40,6 +47,7 @@ namespace Arcane_Aegis.Entities
             EntityView view = CreateView(data.EntityId, data.Name, data.Type, data.RaceId, data.ClassId, data.GenderId);
             view.Id = data.EntityId;
             view.Type = data.Type;
+            view.WorldOffset = ZoneOffset; // render this continent's locals in global space
             view.Spawn(isLocal: false);
             view.Teleport(new Vector3(data.Position.X, data.Position.Y, data.Position.Z), data.Yaw);
 
@@ -48,8 +56,9 @@ namespace Arcane_Aegis.Entities
         }
 
         /// <summary>Spawns OUR own player at the SERVER-given spawn point (NetClient calls this on login).</summary>
-        public PlayerView SpawnLocal(ushort id, string name, Vector3 serverSpawn, string raceId, string classId, string genderId)
+        public PlayerView SpawnLocal(ushort id, string name, Vector3 serverSpawn, string raceId, string classId, string genderId, Vector3 zoneOffset)
         {
+            ZoneOffset = zoneOffset; // this continent's offset (server LOCAL → our GLOBAL)
             EntityView view = CreateView(id, name, EntityType.Player, raceId, classId, genderId);
             view.Id = id;
             view.Type = EntityType.Player;
@@ -58,10 +67,11 @@ namespace Arcane_Aegis.Entities
             var pv = view as PlayerView;
             if (pv == null) Debug.LogError("[Entities] local prefab root has no PlayerView — local control/interpolation won't be configured. Put PlayerView on the prefab ROOT.");
 
-            // The server dictates the spawn (positive, inside the zone — coords are quantized to [0,8192]).
-            // Small offset so two test clients don't overlap; +2 y so the KCC drops onto the ground.
+            // Server spawn is in LOCAL coords → render in global. Small xz offset so two test clients don't overlap;
+            // +2 y so the KCC drops onto the ground.
+            Vector3 ws = ToWorld(serverSpawn);
             Vector2 off = Random.insideUnitCircle * 2f;
-            Vector3 spawn = new Vector3(serverSpawn.x + off.x, serverSpawn.y + 2f, serverSpawn.z + off.y);
+            Vector3 spawn = new Vector3(ws.x + off.x, ws.y + 2f, ws.z + off.y);
             if (pv != null && pv.Motor != null) pv.Motor.SetPosition(spawn);
             else view.transform.position = spawn;
 
@@ -76,6 +86,39 @@ namespace Arcane_Aegis.Entities
             Destroy(view.gameObject);
             _views.Remove(id);
             Debug.Log($"[Entities] despawn #{id}");
+        }
+
+        /// <summary>Zone change (border handoff): re-home OUR player on the new continent — drop the old continent's
+        /// entities, re-key the local view to the new server id, and teleport it to the new local spawn. The
+        /// character (model/appearance) is unchanged — only the id + position change.</summary>
+        public void RespawnLocal(ushort newId, Vector3 serverSpawn, Vector3 zoneOffset)
+        {
+            if (Local == null) return;
+            ZoneOffset = zoneOffset; // the NEW continent's offset → the player's GLOBAL position stays continuous
+
+            // The old continent's entities aren't in the new one → drop everything except our own player.
+            var stale = new List<ushort>();
+            foreach (var kv in _views) if (kv.Key != Local.Id) stale.Add(kv.Key);
+            foreach (ushort id in stale) { Destroy(_views[id].gameObject); _views.Remove(id); }
+
+            // Re-key the local view to the new server-assigned id (snapshots/corrections reference it).
+            _views.Remove(Local.Id);
+            Local.Id = newId;
+            _views[newId] = Local;
+
+            // Global coords are CONTINUOUS across the border, so our current transform is already (almost) right —
+            // only off by the latency the handoff round-trip took. Hard-teleporting to the server's recorded
+            // crossing point would snap us BACKWARD by that drift (the visible "tremidinha"). So keep the smooth
+            // current position and let the normal StateUpdate correction nudge it; only snap if we're genuinely far
+            // off (something went wrong).
+            Vector3 target = ToWorld(serverSpawn);            // where the server thinks we are (global)
+            float driftSqr = (Local.transform.position - target).sqrMagnitude;
+            if (driftSqr > 25f) // > 5 m → snap to be safe
+            {
+                if (Local.Motor != null) Local.Motor.SetPosition(target);
+                else Local.transform.position = target;
+            }
+            Debug.Log($"[Entities] zone change → local re-homed as #{newId} @ global ({Local.transform.position.x:0},{Local.transform.position.z:0}) drift {Mathf.Sqrt(driftSqr):0.0}m");
         }
 
         public void ApplySnapshot(in SnapshotEntry e)

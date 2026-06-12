@@ -26,7 +26,8 @@ namespace Arcane_Aegis.Network.Handlers
 
             if (p.HasCorrection && local.Motor != null)
             {
-                var cp = new Vector3(p.CorrectedPosition.X, p.CorrectedPosition.Y, p.CorrectedPosition.Z);
+                // Server sends the correction in LOCAL coords → render in global (continent offset).
+                var cp = _entities.ToWorld(new Vector3(p.CorrectedPosition.X, p.CorrectedPosition.Y, p.CorrectedPosition.Z));
                 local.Motor.SetPosition(cp);
                 Debug.Log($"[NetClient] position corrected by server → {cp}");
             }

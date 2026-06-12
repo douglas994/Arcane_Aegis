@@ -115,9 +115,10 @@ namespace Arcane_Aegis.Network
         public void SendMovement(Vector3 position, float yaw, MovementState state)
         {
             if (!CanSend) return;
+            Vector3 local = position - entities.ZoneOffset; // render is GLOBAL; the server validates in LOCAL coords
             Send(new C2S_MovementState
             {
-                Position = new NetVector3(position.x, position.y, position.z),
+                Position = new NetVector3(local.x, local.y, local.z),
                 Yaw = yaw,
                 State = state,
             }, DeliveryMethod.Sequenced);

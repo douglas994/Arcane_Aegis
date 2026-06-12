@@ -18,7 +18,7 @@ MonoBehaviour:
   characterClass: {fileID: 11400000, guid: 656dcd5d4b7ced2459e0c7b1a145ca07, type: 2}
   faction: Neutral
   zoneId: veridia
-  spawnPosition: {x: 0, y: 0, z: 0}
+  spawnPosition: {x: 250, y: 0, z: 250}
   orientation: 0
   startingLevel: 1
   levelXpProfile: default

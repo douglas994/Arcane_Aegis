@@ -25,12 +25,20 @@ namespace Arcane_Aegis.Network.Handlers
         {
             var p = new S2C_LoginResult();
             p.Deserialize(ref reader);
-            Debug.Log($"[NetClient] login {(p.Success ? "OK" : "FAIL")} — my id = {p.YourEntityId}");
-            if (!p.Success || _spawned) return;
+            if (!p.Success) return;
+            var sp = new Vector3(p.SpawnPosition.X, p.SpawnPosition.Y, p.SpawnPosition.Z);
+            var offset = new Vector3(p.ZoneOffsetX, 0f, p.ZoneOffsetZ);
+
+            if (_spawned)
+            {
+                // Already in-world → this LoginResult is a ZONE CHANGE (border handoff): re-home, don't re-create.
+                Debug.Log($"[NetClient] zone change → id {p.YourEntityId} @ local ({sp.x:0},{sp.z:0}) offset ({offset.x:0},{offset.z:0})");
+                _entities.RespawnLocal(p.YourEntityId, sp, offset);
+                return;
+            }
 
             _spawned = true;
-            var sp = new Vector3(p.SpawnPosition.X, p.SpawnPosition.Y, p.SpawnPosition.Z);
-            _entities.SpawnLocal(p.YourEntityId, _username, sp, p.RaceId, p.ClassId, p.GenderId); // sets EntityManager.Local
+            _entities.SpawnLocal(p.YourEntityId, _username, sp, p.RaceId, p.ClassId, p.GenderId, offset); // sets EntityManager.Local
         }
     }
 }

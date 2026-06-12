@@ -15,6 +15,7 @@ namespace Arcane_Aegis.Entities
     {
         public ushort Id;
         public EntityType Type;
+        public Vector3 WorldOffset; // continent offset (grid × worldSize) → render server LOCAL coords in GLOBAL space
 
         [SerializeField] private float positionSmoothTime = 0.1f;
         [SerializeField] private float rotationLerp = 12f;
@@ -55,6 +56,7 @@ namespace Arcane_Aegis.Entities
         /// <summary>Updates the follow target, animation state, and windowed networked speed.</summary>
         public void SetTarget(Vector3 position, float yaw, MovementState state)
         {
+            position += WorldOffset; // server sends LOCAL coords; this view renders in GLOBAL (continent offset)
             _targetPos = position;
             _targetYaw = yaw;
 
@@ -84,6 +86,7 @@ namespace Arcane_Aegis.Entities
         /// <summary>Snaps instantly and clears history (on spawn).</summary>
         public void Teleport(Vector3 position, float yaw)
         {
+            position += WorldOffset; // local → global
             _targetPos = position;
             _targetYaw = yaw;
             _vel = Vector3.zero;
