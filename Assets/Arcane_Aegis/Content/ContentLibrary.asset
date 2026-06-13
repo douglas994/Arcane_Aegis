@@ -28,3 +28,5 @@ MonoBehaviour:
   templates:
   - {fileID: 11400000, guid: dcdaf2157f7bb0f47a7846bf2417e13e, type: 2}
   - {fileID: 11400000, guid: ddc73e163bba89844abe8517ac1a01ba, type: 2}
+  items:
+  - {fileID: 11400000, guid: 1445cb1f9f596524fbe5107dc34a4858, type: 2}

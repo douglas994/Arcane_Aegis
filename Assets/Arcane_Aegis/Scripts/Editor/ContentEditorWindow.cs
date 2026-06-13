@@ -8,6 +8,8 @@ using NetworkLibrary;
 using NetworkLibrary.Serialization;
 using NetworkLibrary.Transport;
 using ArcaneShared.Constants;
+using ArcaneShared.Enums;
+using ArcaneShared.Models;
 using ArcaneShared.Protocol;
 using ArcaneShared.Protocol.Internal;
 using Arcane_Aegis.Content;
@@ -48,9 +50,33 @@ namespace Arcane_Aegis.EditorTools
 
         private int _cat;
         private string _newName = "";
+        private string _search = "";
         private UnityEngine.Object _selected;
         private Editor _inspector;
         private Vector2 _catScroll, _listScroll, _inspScroll;
+
+        // ── palette ──
+        private static readonly Color ColAccent   = new(0.45f, 0.62f, 1f);
+        private static readonly Color ColRowSel    = new(0.24f, 0.30f, 0.48f);
+        private static readonly Color ColRowHover  = new(1f, 1f, 1f, 0.05f);
+        private static readonly Color ColHeader    = new(0.15f, 0.17f, 0.25f);
+        private static readonly Color ColHeader2   = new(0.10f, 0.12f, 0.18f);
+        private static readonly Color ColText      = new(0.86f, 0.89f, 1f);
+        private static readonly Color ColMuted     = new(0.55f, 0.58f, 0.66f);
+
+        private GUIStyle _rowLabel, _rowMuted, _badge, _sectionLabel;
+        private void EnsureStyles()
+        {
+            if (_rowLabel != null) return;
+            _rowLabel = new GUIStyle(EditorStyles.label) { fontSize = 12, alignment = TextAnchor.MiddleLeft, richText = true };
+            _rowLabel.normal.textColor = ColText;
+            _rowMuted = new GUIStyle(EditorStyles.miniLabel) { alignment = TextAnchor.MiddleRight, richText = true };
+            _rowMuted.normal.textColor = ColMuted;
+            _badge = new GUIStyle(EditorStyles.miniLabel) { alignment = TextAnchor.MiddleCenter };
+            _badge.normal.textColor = new Color(0.8f, 0.85f, 1f);
+            _sectionLabel = new GUIStyle(EditorStyles.miniBoldLabel);
+            _sectionLabel.normal.textColor = ColMuted;
+        }
 
         [MenuItem("Window/ArcaneMMO/Content Editor")]
         public static void Open()
@@ -63,6 +89,7 @@ namespace Arcane_Aegis.EditorTools
         {
             BuildCategories();
             EditorApplication.update += Pump;
+            wantsMouseMove = true; // for row hover highlights
         }
         private void OnDisable()
         {
@@ -76,13 +103,14 @@ namespace Arcane_Aegis.EditorTools
         {
             _cats = new List<Category>
             {
-                new() { Name = "Classes", Icon = "", SoType = typeof(ClassDefinitionSO),  Folder = "Classes", ToContent = so => ("class",  ((ClassDefinitionSO)so).id,  JsonUtility.ToJson(ToDto((ClassDefinitionSO)so))) },
-                new() { Name = "Races",   Icon = "", SoType = typeof(RaceDefinitionSO),   Folder = "Races",   ToContent = so => ("race",   ((RaceDefinitionSO)so).id,   JsonUtility.ToJson(ToDto((RaceDefinitionSO)so))) },
-                new() { Name = "Genders", Icon = "", SoType = typeof(GenderDefinitionSO), Folder = "Genders", ToContent = so => ("gender", ((GenderDefinitionSO)so).id, JsonUtility.ToJson(ToDto((GenderDefinitionSO)so))) },
+                new() { Name = "Classes", Icon = "🛡", SoType = typeof(ClassDefinitionSO),  Folder = "Classes", ToContent = so => ("class",  ((ClassDefinitionSO)so).id,  JsonUtility.ToJson(ToDto((ClassDefinitionSO)so))) },
+                new() { Name = "Races",   Icon = "🧬", SoType = typeof(RaceDefinitionSO),   Folder = "Races",   ToContent = so => ("race",   ((RaceDefinitionSO)so).id,   JsonUtility.ToJson(ToDto((RaceDefinitionSO)so))) },
+                new() { Name = "Genders", Icon = "⚥", SoType = typeof(GenderDefinitionSO), Folder = "Genders", ToContent = so => ("gender", ((GenderDefinitionSO)so).id, JsonUtility.ToJson(ToDto((GenderDefinitionSO)so))) },
                 // Playable archetypes (Atavism "Player Template"): binds race+class + models per gender. Client-only (ToContent = null) — race/class STATS sync via the catalogs above.
-                new() { Name = "Templates", Icon = "", SoType = typeof(CharacterTemplateSO), Folder = "Templates", ToContent = null },
+                new() { Name = "Templates", Icon = "🎭", SoType = typeof(CharacterTemplateSO), Folder = "Templates", ToContent = null },
+                // Items: authored as SOs (icon/art client-side); server-side item-template SYNC is Phase 4 (typed table). Client-only for now.
+                new() { Name = "Items", Icon = "🎒", SoType = typeof(ItemDefinitionSO), Folder = "Items", ToContent = null },
                 // Add more here as the SOs land, e.g.:
-                // new() { Name = "Items", Icon = "🎒", SoType = typeof(ItemSO), Folder = "Items", ToContent = so => ("item", ((ItemSO)so).id, JsonUtility.ToJson(ToDto((ItemSO)so))) },
                 // new() { Name = "Skills", Icon = "✨", SoType = typeof(SkillSO), Folder = "Skills", ToContent = ... },
             };
         }
@@ -124,7 +152,42 @@ namespace Arcane_Aegis.EditorTools
                     if (!string.IsNullOrWhiteSpace(id)) { Send(new I_Db_UpsertContent { Type = type, ContentId = id, Json = json }); n++; }
                 }
             }
-            _status = $"Mirror ✓ — DB limpo + {n} item(ns) re-inseridos.";
+            // Items → the TYPED item-template tables in content.db (not the generic Content store).
+            Send(new I_Db_ClearItemTemplates());
+            int items = 0;
+            foreach (var so in FindAllOf<ItemDefinitionSO>())
+                if (!string.IsNullOrWhiteSpace(so.id)) { Send(new I_Db_UpsertItemTemplate { Template = ToItemTemplate(so) }); items++; }
+
+            _status = $"Mirror ✓ — {n} conteúdo(s) genérico(s) + {items} item(ns) tipado(s).";
+        }
+
+        /// <summary>ItemDefinitionSO → the server's ItemTemplate. The SO uses the shared enums directly (no parsing);
+        /// stat ids are emitted as the StatId enum name. The icon is client art (only its name travels).</summary>
+        private static ItemTemplate ToItemTemplate(ItemDefinitionSO so)
+        {
+            var t = new ItemTemplate
+            {
+                Id = so.id, Name = so.displayName ?? "", Description = so.description ?? "",
+                Icon = so.icon != null ? so.icon.name : "", Model3D = so.model3D != null ? so.model3D.name : "",
+                Type = so.type,
+                Category = so.category ?? "",
+                Slot = so.slot,
+                TwoHanded = so.twoHanded,
+                Rarity = so.rarity,
+                ElementId = so.element.ToString(),
+                LevelReq = so.levelReq, ClassReq = so.classReq ?? "",
+                MaxRolls = so.maxRolls,
+                TierMax = (byte)Mathf.Clamp(so.tierMax, 0, 255),
+                EnhanceMax = (byte)Mathf.Clamp(so.enhanceMax, 0, 255),
+                SocketsMax = (byte)Mathf.Clamp(so.socketsMax, 0, 255),
+                DurabilityMax = so.durabilityMax, Weight = so.weight,
+                Sellable = so.sellable, Tradeable = so.tradeable, NpcPrice = so.npcPrice,
+                StackMax = (ushort)Mathf.Clamp(so.stackMax, 1, ushort.MaxValue),
+            };
+            if (so.statsBase != null) foreach (var s in so.statsBase) if (s.statId != StatId.None) t.StatsBase[s.statId.ToString()] = s.value;
+            if (so.rollsPossible != null) foreach (var r in so.rollsPossible) if (r.statId != StatId.None) t.RollsPossible.Add(new ItemTemplate.RollRange { StatId = r.statId.ToString(), Min = r.min, Max = r.max });
+            if (so.effects != null) foreach (var e in so.effects) if (e.kind != ConsumableEffectKind.None) t.Effects.Add(new ItemEffect { Kind = e.kind, Stat = e.statId, Amount = e.amount, DurationSeconds = e.durationSeconds });
+            return t;
         }
 
         private static ClassDto ToDto(ClassDefinitionSO c) => new()
@@ -150,15 +213,19 @@ namespace Arcane_Aegis.EditorTools
             lib.races = new List<RaceDefinitionSO>(FindAllOf<RaceDefinitionSO>());
             lib.genders = new List<GenderDefinitionSO>(FindAllOf<GenderDefinitionSO>());
             lib.templates = new List<CharacterTemplateSO>(FindAllOf<CharacterTemplateSO>());
+            lib.items = new List<ItemDefinitionSO>(FindAllOf<ItemDefinitionSO>());
             EditorUtility.SetDirty(lib);
             AssetDatabase.SaveAssets();
-            _status = $"ContentLibrary: {lib.classes.Count} classes, {lib.races.Count} raças, {lib.genders.Count} gêneros, {lib.templates.Count} templates.";
+            _status = $"ContentLibrary: {lib.classes.Count} classes, {lib.races.Count} raças, {lib.genders.Count} gêneros, {lib.templates.Count} templates, {lib.items.Count} itens.";
             Selection.activeObject = lib;
         }
 
         // ───────────────────────── UI ─────────────────────────
         private void OnGUI()
         {
+            EnsureStyles();
+            if (Event.current.type == EventType.MouseMove) Repaint();
+
             DrawHeader();
             DrawConnectionBar();
             EditorGUILayout.Space(4);
@@ -173,11 +240,35 @@ namespace Arcane_Aegis.EditorTools
 
         private void DrawHeader()
         {
-            var rect = EditorGUILayout.GetControlRect(false, 32);
-            EditorGUI.DrawRect(rect, new Color(0.16f, 0.18f, 0.26f));
-            var style = new GUIStyle(EditorStyles.boldLabel) { fontSize = 14, alignment = TextAnchor.MiddleLeft, padding = new RectOffset(10, 0, 0, 0) };
-            style.normal.textColor = new Color(0.85f, 0.88f, 1f);
-            EditorGUI.LabelField(rect, "⚔  ArcaneMMO — Content Editor", style);
+            var rect = EditorGUILayout.GetControlRect(false, 40);
+            EditorGUI.DrawRect(rect, ColHeader);
+            EditorGUI.DrawRect(new Rect(rect.x, rect.yMax - 2, rect.width, 2), ColAccent); // accent underline
+
+            var title = new GUIStyle(EditorStyles.boldLabel) { fontSize = 15, alignment = TextAnchor.MiddleLeft, padding = new RectOffset(12, 0, 0, 0) };
+            title.normal.textColor = ColText;
+            EditorGUI.LabelField(new Rect(rect.x, rect.y + 2, rect.width, 22), "⚔  ArcaneMMO — Content Editor", title);
+
+            var sub = new GUIStyle(EditorStyles.miniLabel) { alignment = TextAnchor.MiddleLeft, padding = new RectOffset(14, 0, 0, 0) };
+            sub.normal.textColor = ColMuted;
+            EditorGUI.LabelField(new Rect(rect.x, rect.y + 20, rect.width, 16), "ScriptableObjects → DB tipado · edição por dropdowns", sub);
+        }
+
+        /// <summary>A selectable list row with optional thumbnail + count badge, accent bar when selected, hover tint.</summary>
+        private bool Row(string label, int count, bool selected, float height, Texture thumb = null)
+        {
+            Rect r = GUILayoutUtility.GetRect(GUIContent.none, GUIStyle.none, GUILayout.Height(height), GUILayout.ExpandWidth(true));
+            bool hover = r.Contains(Event.current.mousePosition);
+            if (selected) EditorGUI.DrawRect(r, ColRowSel);
+            else if (hover) EditorGUI.DrawRect(r, ColRowHover);
+            if (selected) EditorGUI.DrawRect(new Rect(r.x, r.y, 3, r.height), ColAccent);
+
+            float x = r.x + 8;
+            if (thumb != null) { GUI.DrawTexture(new Rect(x, r.y + (height - 22) / 2, 22, 22), thumb, ScaleMode.ScaleToFit); x += 28; }
+            GUI.Label(new Rect(x, r.y, r.width - (x - r.x) - 30, r.height), label, _rowLabel);
+            if (count >= 0) GUI.Label(new Rect(r.xMax - 30, r.y, 26, r.height), count.ToString(), _rowMuted);
+
+            if (Event.current.type == EventType.MouseDown && hover && Event.current.button == 0) { Event.current.Use(); return true; }
+            return false;
         }
 
         private void DrawConnectionBar()
@@ -203,18 +294,15 @@ namespace Arcane_Aegis.EditorTools
 
         private void DrawCategories()
         {
-            using (new EditorGUILayout.VerticalScope(EditorStyles.helpBox, GUILayout.Width(140)))
+            using (new EditorGUILayout.VerticalScope(EditorStyles.helpBox, GUILayout.Width(156)))
             {
-                EditorGUILayout.LabelField("CONTENT", EditorStyles.miniBoldLabel);
+                EditorGUILayout.LabelField("CONTEÚDO", _sectionLabel);
+                EditorGUILayout.Space(2);
                 _catScroll = EditorGUILayout.BeginScrollView(_catScroll);
                 for (int i = 0; i < _cats.Count; i++)
                 {
-                    bool sel = _cat == i;
-                    var style = new GUIStyle(EditorStyles.miniButton) { alignment = TextAnchor.MiddleLeft, fixedHeight = 26 };
-                    var prev = GUI.backgroundColor;
-                    if (sel) GUI.backgroundColor = new Color(0.45f, 0.6f, 1f);
-                    if (GUILayout.Button($"  {_cats[i].Icon}  {_cats[i].Name}", style) && !sel) { _cat = i; Select(null); }
-                    GUI.backgroundColor = prev;
+                    int count = FindAll(_cats[i]).Length;
+                    if (Row($"{_cats[i].Icon}  {_cats[i].Name}", count, _cat == i, 30) && _cat != i) { _cat = i; Select(null); }
                 }
                 EditorGUILayout.EndScrollView();
             }
@@ -223,9 +311,10 @@ namespace Arcane_Aegis.EditorTools
         private void DrawItems()
         {
             var cat = _cats[_cat];
-            using (new EditorGUILayout.VerticalScope(EditorStyles.helpBox, GUILayout.Width(190)))
+            using (new EditorGUILayout.VerticalScope(EditorStyles.helpBox, GUILayout.Width(214)))
             {
-                EditorGUILayout.LabelField(cat.Name, EditorStyles.boldLabel);
+                EditorGUILayout.LabelField($"{cat.Icon}  {cat.Name}", EditorStyles.boldLabel);
+                _search = EditorGUILayout.TextField(_search, EditorStyles.toolbarSearchField);
                 using (new EditorGUILayout.HorizontalScope())
                 {
                     _newName = EditorGUILayout.TextField(_newName);
@@ -236,15 +325,16 @@ namespace Arcane_Aegis.EditorTools
                 }
                 DrawDivider();
                 _listScroll = EditorGUILayout.BeginScrollView(_listScroll);
-                foreach (var so in FindAll(cat))
+                var all = FindAll(cat);
+                int shown = 0;
+                foreach (var so in all)
                 {
-                    bool sel = _selected == so;
-                    var style = new GUIStyle(EditorStyles.miniButton) { alignment = TextAnchor.MiddleLeft, fixedHeight = 22 };
-                    var prev = GUI.backgroundColor;
-                    if (sel) GUI.backgroundColor = new Color(0.45f, 0.6f, 1f);
-                    if (GUILayout.Button(so.name, style) && !sel) Select(so);
-                    GUI.backgroundColor = prev;
+                    if (!string.IsNullOrEmpty(_search) && so.name.IndexOf(_search, StringComparison.OrdinalIgnoreCase) < 0) continue;
+                    Texture thumb = (so is ItemDefinitionSO it && it.icon != null) ? (AssetPreview.GetAssetPreview(it.icon) ?? it.icon.texture) : null;
+                    if (Row(so.name, -1, _selected == so, 28, thumb)) Select(so);
+                    shown++;
                 }
+                if (shown == 0) EditorGUILayout.LabelField(all.Length == 0 ? "— vazio —" : "— sem resultados —", _rowMuted);
                 EditorGUILayout.EndScrollView();
             }
         }

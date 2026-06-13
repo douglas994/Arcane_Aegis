@@ -98,6 +98,9 @@ namespace Arcane_Aegis.Network
             router.Register(new CreationDataHandler((races, classes, genders) => OnCreationData?.Invoke(races, classes, genders)));
             router.Register(new CharacterListHandler(chars => OnCharacterList?.Invoke(chars)));
             router.Register(new CharacterCreateResultHandler(result => OnCharacterCreateResult?.Invoke(result)));
+            router.Register(new ItemTemplatesHandler());
+            router.Register(new InventoryStateHandler());
+            router.Register(new NoticeHandler());
             return router;
         }
 
@@ -129,6 +132,35 @@ namespace Arcane_Aegis.Network
         {
             if (!CanSend) return;
             Send(new C2S_CastAbility { AbilityId = abilityId, TargetId = targetId }, DeliveryMethod.ReliableOrdered);
+        }
+
+        /// <summary>Asks the server to move an item to a (container, slot): equip / unequip / reorder. Server validates;
+        /// it replies with a fresh S2C_InventoryState (+ vitals if the gear changed the stats).</summary>
+        public void SendMoveItem(uint instanceId, byte toContainer, ushort toSlot)
+        {
+            if (!CanSend) return;
+            Send(new C2S_MoveItem { InstanceId = instanceId, ToContainer = toContainer, ToSlot = toSlot }, DeliveryMethod.ReliableOrdered);
+        }
+
+        /// <summary>Asks the server to destroy a bag item (the trash). Server validates ownership; replies with a fresh inventory.</summary>
+        public void SendDiscardItem(uint instanceId)
+        {
+            if (!CanSend) return;
+            Send(new C2S_DiscardItem { InstanceId = instanceId }, DeliveryMethod.ReliableOrdered);
+        }
+
+        /// <summary>Asks the server to split <paramref name="amount"/> off a bag stack into a new slot. Server validates; replies with a fresh inventory.</summary>
+        public void SendSplitStack(uint instanceId, ushort amount)
+        {
+            if (!CanSend) return;
+            Send(new C2S_SplitStack { InstanceId = instanceId, Amount = amount }, DeliveryMethod.ReliableOrdered);
+        }
+
+        /// <summary>Asks the server to use a consumable (apply its effects + consume one). Server validates; replies with a fresh inventory.</summary>
+        public void SendUseItem(uint instanceId)
+        {
+            if (!CanSend) return;
+            Send(new C2S_UseItem { InstanceId = instanceId }, DeliveryMethod.ReliableOrdered);
         }
 
         private bool CanSend => _server != null && entities != null && entities.Local != null;

@@ -15,11 +15,13 @@ namespace Arcane_Aegis.Content
         public List<RaceDefinitionSO> races = new();
         public List<GenderDefinitionSO> genders = new();
         public List<CharacterTemplateSO> templates = new();
+        public List<ItemDefinitionSO> items = new();
 
         public ClassDefinitionSO GetClass(string id) => classes.Find(c => c != null && c.id == id);
         public RaceDefinitionSO GetRace(string id) => races.Find(r => r != null && r.id == id);
         public GenderDefinitionSO GetGender(string id) => genders.Find(g => g != null && g.id == id);
         public CharacterTemplateSO GetTemplate(string id) => templates.Find(t => t != null && t.id == id);
+        public ItemDefinitionSO GetItem(string id) => items.Find(i => i != null && i.id == id);
 
         /// <summary>The 3D model for a character's look: the CharacterTemplate matched by race+class, then that
         /// gender's model. Falls back to same-race (any class), then any template with a model. Null if none.
