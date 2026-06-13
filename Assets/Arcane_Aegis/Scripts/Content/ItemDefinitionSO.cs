@@ -11,6 +11,16 @@ namespace Arcane_Aegis.Content
     [CreateAssetMenu(fileName = "Item_", menuName = "ArcaneMMO/Item Definition")]
     public class ItemDefinitionSO : ScriptableObject
     {
+        /// <summary>Where an equipped model attaches on the character rig (bone + local offset). Client art.</summary>
+        [System.Serializable] public struct AttachPoint
+        {
+            [Tooltip("Nome do osso/transform no modelo do personagem (ex.: 'RightHand', 'Spine2'). Vazio = não anexa.")]
+            public string bone;
+            public Vector3 position;
+            public Vector3 euler;
+            [Tooltip("(0,0,0) = escala 1,1,1.")] public Vector3 scale;
+        }
+
         [System.Serializable] public struct Stat { public StatId statId; public int value; }
         [System.Serializable] public struct Roll { public StatId statId; public int min, max; }
         [System.Serializable] public struct Effect
@@ -58,5 +68,9 @@ namespace Arcane_Aegis.Content
         public Sprite icon;
         [TextArea] public string description;
         [Tooltip("World/equipped model (optional)")] public GameObject model3D;
+        [Tooltip("Onde a arma fica EM USO (em combate) — normalmente a mão.")]
+        public AttachPoint gripAttach;
+        [Tooltip("Onde a arma fica GUARDADA fora de combate (ex.: costas). Bone vazio = sempre na mão.")]
+        public AttachPoint sheathAttach;
     }
 }

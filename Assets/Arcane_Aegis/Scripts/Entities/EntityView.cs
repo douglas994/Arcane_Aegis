@@ -16,6 +16,7 @@ namespace Arcane_Aegis.Entities
         public ushort Id;
         public EntityType Type;
         public Vector3 WorldOffset; // continent offset (grid × worldSize) → render server LOCAL coords in GLOBAL space
+        public string EquippedMainHand = ""; // replicated main-hand template id (remotes) → WeaponVisual shows the model
 
         [SerializeField] private float positionSmoothTime = 0.1f;
         [SerializeField] private float rotationLerp = 12f;
@@ -98,6 +99,15 @@ namespace Arcane_Aegis.Entities
         public void PlayAttack()
         {
             if (characterAnimator != null) characterAnimator.TriggerAttack();
+        }
+
+        /// <summary>Plays a SKILL's cast presentation (its own anim + cast VFX) via CombatFx. Falls back to the
+        /// generic attack if CombatFx isn't in the scene. Driven by S2C_AbilityCast for remote casters.</summary>
+        public void PlayCast(int abilityId)
+        {
+            if (Arcane_Aegis.Combat.CombatFx.Instance != null)
+                Arcane_Aegis.Combat.CombatFx.Instance.PlayCast(transform, characterAnimator, abilityId);
+            else if (characterAnimator != null) characterAnimator.TriggerAttack();
         }
 
         private void Update()

@@ -44,6 +44,12 @@ namespace Arcane_Aegis.EditorTools
                 P("levelReq"); P("classReq");
                 P("durabilityMax");
                 P("model3D");
+                if (type == ItemType.Weapon)
+                {
+                    EditorGUILayout.HelpBox("Encaixe no personagem: 'bone' = nome do osso no rig (ex.: RightHand / Spine2). Grip = em combate (mão); Sheath = fora de combate (costas). Sheath sem bone = arma sempre na mão.", MessageType.None);
+                    P("gripAttach");
+                    P("sheathAttach");
+                }
             }
 
             if ((equippable || gem) && Section(gem ? "Atributos (ao encaixar)" : "Atributos"))

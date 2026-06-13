@@ -87,6 +87,15 @@ namespace Arcane_Aegis.Controllers
             if (animator != null && _hasAttack) animator.SetTrigger(_attackHash);
         }
 
+        /// <summary>Fires a named trigger (a skill's own animTrigger). Falls back to the generic attack if the
+        /// trigger is empty or the controller doesn't have it — so a skill without a custom anim still animates.</summary>
+        public void TriggerNamed(string trigger)
+        {
+            if (animator == null) return;
+            if (!string.IsNullOrEmpty(trigger) && HasParam(trigger)) animator.SetTrigger(Animator.StringToHash(trigger));
+            else TriggerAttack();
+        }
+
         /// <summary>Sets the Dead bool so the controller plays/exits the death animation (no-op if absent).</summary>
         public void SetDead(bool dead)
         {

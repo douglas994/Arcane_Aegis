@@ -24,10 +24,27 @@ namespace Arcane_Aegis.Controllers.Locomotion
         public float RotationSharpness = 12f;
         public float AirControl = 5f;
 
+        // ── crowd-control (set by the network's S2C_ControlState; §12.2) ──
+        /// <summary>Can't move or act (stun). Set from the server's CC replication.</summary>
+        public bool Stunned { get; private set; }
+        /// <summary>Can't move (root) — can still act.</summary>
+        public bool Rooted { get; private set; }
+        /// <summary>Move-speed multiplier (1 = normal, &lt;1 = slowed).</summary>
+        public float SpeedMult { get; private set; } = 1f;
+        /// <summary>True while a stun/root forbids horizontal movement.</summary>
+        public bool MoveBlocked => Stunned || Rooted;
+
+        /// <summary>Applies the server's authoritative CC state to the local input (no rubber-band).</summary>
+        public void SetControl(bool stunned, bool rooted, float speedMult)
+        {
+            Stunned = stunned; Rooted = rooted;
+            SpeedMult = speedMult > 0f ? speedMult : 0f;
+        }
+
         /// <summary>True while Dash (Shift) is held.</summary>
         public bool Dashing => Input != null && Input.DashHeld;
-        /// <summary>Ground move speed: jog by default, dash while Shift is held.</summary>
-        public float CurrentSpeed => Dashing ? DashSpeed : RunSpeed;
+        /// <summary>Ground move speed: jog by default, dash while Shift is held (scaled by any slow).</summary>
+        public float CurrentSpeed => (Dashing ? DashSpeed : RunSpeed) * SpeedMult;
 
         public ILocomotionState Current { get; private set; }
         public IdleState Idle { get; private set; }
@@ -64,6 +81,7 @@ namespace Arcane_Aegis.Controllers.Locomotion
         /// <summary>Queues a jump impulse and ungrounds the motor (call on a grounded jump press).</summary>
         public void RequestJump()
         {
+            if (MoveBlocked) return; // can't jump while stunned/rooted
             _jumpQueued = true;
             Motor.ForceUnground();
         }
@@ -81,6 +99,7 @@ namespace Arcane_Aegis.Controllers.Locomotion
         /// <summary>Move direction from input, RELATIVE to the camera's facing (XZ plane, magnitude 0..1).</summary>
         public Vector3 MoveDirection()
         {
+            if (MoveBlocked) return Vector3.zero; // stunned/rooted → no horizontal move (server would reject it anyway)
             Vector2 m = Input != null ? Input.Move : Vector2.zero;
             if (m.sqrMagnitude < 1e-6f) return Vector3.zero;
 

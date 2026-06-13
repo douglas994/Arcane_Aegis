@@ -11,17 +11,27 @@ namespace Arcane_Aegis.Content
     [CreateAssetMenu(fileName = "ContentLibrary", menuName = "ArcaneMMO/Content Library")]
     public class ContentLibrary : ScriptableObject
     {
+        /// <summary>The loaded library, so runtime UI (skill bar, tooltips) can resolve content without a per-component
+        /// serialized reference. Set when the SO is loaded (it's referenced by EntityManager/CombatFx, so it loads).</summary>
+        public static ContentLibrary Active { get; private set; }
+        private void OnEnable() { if (Active == null) Active = this; }
+
+
         public List<ClassDefinitionSO> classes = new();
         public List<RaceDefinitionSO> races = new();
         public List<GenderDefinitionSO> genders = new();
         public List<CharacterTemplateSO> templates = new();
         public List<ItemDefinitionSO> items = new();
+        public List<SkillDefinitionSO> skills = new();
+        public List<StatusDefinitionSO> statuses = new();
 
         public ClassDefinitionSO GetClass(string id) => classes.Find(c => c != null && c.id == id);
         public RaceDefinitionSO GetRace(string id) => races.Find(r => r != null && r.id == id);
         public GenderDefinitionSO GetGender(string id) => genders.Find(g => g != null && g.id == id);
         public CharacterTemplateSO GetTemplate(string id) => templates.Find(t => t != null && t.id == id);
         public ItemDefinitionSO GetItem(string id) => items.Find(i => i != null && i.id == id);
+        public SkillDefinitionSO GetSkill(int id) => skills.Find(s => s != null && s.id == id);   // for the skill bar (icon/cooldown)
+        public StatusDefinitionSO GetStatus(string id) => statuses.Find(s => s != null && s.id == id);
 
         /// <summary>The 3D model for a character's look: the CharacterTemplate matched by race+class, then that
         /// gender's model. Falls back to same-race (any class), then any template with a model. Null if none.

@@ -99,6 +99,8 @@ namespace Arcane_Aegis.EditorTools
         }
         private void Pump() => _net?.PollEvents();
 
+        private void OnFocus() => InvalidateCache(); // pick up assets created/edited in the Project window
+
         private void BuildCategories()
         {
             _cats = new List<Category>
@@ -108,10 +110,11 @@ namespace Arcane_Aegis.EditorTools
                 new() { Name = "Genders", Icon = "⚥", SoType = typeof(GenderDefinitionSO), Folder = "Genders", ToContent = so => ("gender", ((GenderDefinitionSO)so).id, JsonUtility.ToJson(ToDto((GenderDefinitionSO)so))) },
                 // Playable archetypes (Atavism "Player Template"): binds race+class + models per gender. Client-only (ToContent = null) — race/class STATS sync via the catalogs above.
                 new() { Name = "Templates", Icon = "🎭", SoType = typeof(CharacterTemplateSO), Folder = "Templates", ToContent = null },
-                // Items: authored as SOs (icon/art client-side); server-side item-template SYNC is Phase 4 (typed table). Client-only for now.
+                // Items: authored as SOs (icon/art client-side); synced to the TYPED item-template tables (see SyncAll).
                 new() { Name = "Items", Icon = "🎒", SoType = typeof(ItemDefinitionSO), Folder = "Items", ToContent = null },
-                // Add more here as the SOs land, e.g.:
-                // new() { Name = "Skills", Icon = "✨", SoType = typeof(SkillSO), Folder = "Skills", ToContent = ... },
+                // Skills + Statuses: authored as SOs (icon client-side); synced to the TYPED Ability/Status tables (see SyncAll).
+                new() { Name = "Skills",   Icon = "✨", SoType = typeof(SkillDefinitionSO),  Folder = "Skills",   ToContent = null },
+                new() { Name = "Statuses", Icon = "☠", SoType = typeof(StatusDefinitionSO), Folder = "Statuses", ToContent = null },
             };
         }
 
@@ -165,7 +168,15 @@ namespace Arcane_Aegis.EditorTools
             var genders = BuildGenders();
             Send(new I_Db_UpsertStatsContent { Races = races, Classes = classes, Genders = genders });
 
-            _status = $"Mirror ✓ — {items} item(ns) + {races.Length} raça(s)/{classes.Length} classe(s)/{genders.Length} gênero(s) tipado(s).";
+            // Skills + Statuses → the TYPED Ability/Status tables in content.db (upsert by id; the server loads them on boot).
+            int skills = 0;
+            foreach (var so in FindAllOf<SkillDefinitionSO>())
+                if (so.id is > 0 and < 256) { Send(new I_Db_UpsertAbility { Ability = ToAbilityRecord(so) }); skills++; }
+            int statuses = 0;
+            foreach (var so in FindAllOf<StatusDefinitionSO>())
+                if (!string.IsNullOrWhiteSpace(so.id)) { Send(new I_Db_UpsertStatus { Status = ToStatusRecord(so) }); statuses++; }
+
+            _status = $"Mirror ✓ — {items} item(ns) + {races.Length}r/{classes.Length}c/{genders.Length}g + {skills} skill(s) + {statuses} status(es).";
         }
 
         /// <summary>ItemDefinitionSO → the server's ItemTemplate. The SO uses the shared enums directly (no parsing);
@@ -196,6 +207,34 @@ namespace Arcane_Aegis.EditorTools
             if (so.effects != null) foreach (var e in so.effects) if (e.kind != ConsumableEffectKind.None) t.Effects.Add(new ItemEffect { Kind = e.kind, Stat = e.statId, Amount = e.amount, DurationSeconds = e.durationSeconds });
             return t;
         }
+
+        /// <summary>SkillDefinitionSO → the server's AbilityRecord (shared enums cast to bytes; icon is client art).</summary>
+        private static AbilityRecord ToAbilityRecord(SkillDefinitionSO so)
+        {
+            var effects = new List<AbilityRecord.EffectRecord>();
+            if (so.effects != null)
+                foreach (var e in so.effects)
+                    effects.Add(new AbilityRecord.EffectRecord { Type = (byte)e.type, Amount = e.amount, ScalesWith = (byte)e.scalesWith, StatusId = e.statusId ?? "" });
+            return new AbilityRecord
+            {
+                Id = (byte)Mathf.Clamp(so.id, 1, 255),
+                Name = so.displayName ?? "",
+                CastTime = so.castTime, Cooldown = so.cooldown, Cost = so.cost,
+                Targeting = (byte)so.targeting, Range = so.range, ConeAngle = so.coneAngle, Width = so.width,
+                Element = (byte)so.element,
+                RequiredWeapon = so.requiredWeapon ?? "",
+                Effects = effects.ToArray(),
+            };
+        }
+
+        /// <summary>StatusDefinitionSO → the server's StatusRecord.</summary>
+        private static StatusRecord ToStatusRecord(StatusDefinitionSO so) => new()
+        {
+            Id = so.id, Name = so.displayName ?? "",
+            Kind = (byte)so.kind, Duration = so.duration, TickInterval = so.tickInterval,
+            Element = (byte)so.element, Amount = so.amount,
+            Stacking = (byte)so.stacking, MaxStacks = so.maxStacks, Stat = (byte)so.stat,
+        };
 
         private static ClassDto ToDto(ClassDefinitionSO c) => new()
         {
@@ -243,6 +282,7 @@ namespace Arcane_Aegis.EditorTools
                     Str = c.str, Dex = c.dex, Int = c.intel, Vit = c.vit, Spi = c.spi, Luk = c.luk,
                     StrPerLevel = c.strPerLevel, DexPerLevel = c.dexPerLevel, IntPerLevel = c.intPerLevel,
                     VitPerLevel = c.vitPerLevel, SpiPerLevel = c.spiPerLevel, LukPerLevel = c.lukPerLevel,
+                    SkillIds = ToSkillIdBytes(c.skillIds),
                 };
             }
             return arr;
@@ -258,6 +298,15 @@ namespace Arcane_Aegis.EditorTools
 
         private static byte ParseElement(string s) => System.Enum.TryParse<ElementType>(s, true, out var e) ? (byte)e : (byte)0;
 
+        /// <summary>Class skill ids (int, 1..255) → the byte[] the server reads (dedup + in-range).</summary>
+        private static byte[] ToSkillIdBytes(List<int> ids)
+        {
+            if (ids == null || ids.Count == 0) return System.Array.Empty<byte>();
+            var seen = new HashSet<byte>();
+            foreach (var i in ids) if (i is > 0 and < 256) seen.Add((byte)i);
+            var arr = new byte[seen.Count]; seen.CopyTo(arr); return arr;
+        }
+
         private void CollectIntoLibrary()
         {
             var found = FindAllOf<ContentLibrary>();
@@ -267,9 +316,11 @@ namespace Arcane_Aegis.EditorTools
             lib.genders = new List<GenderDefinitionSO>(FindAllOf<GenderDefinitionSO>());
             lib.templates = new List<CharacterTemplateSO>(FindAllOf<CharacterTemplateSO>());
             lib.items = new List<ItemDefinitionSO>(FindAllOf<ItemDefinitionSO>());
+            lib.skills = new List<SkillDefinitionSO>(FindAllOf<SkillDefinitionSO>());
+            lib.statuses = new List<StatusDefinitionSO>(FindAllOf<StatusDefinitionSO>());
             EditorUtility.SetDirty(lib);
             AssetDatabase.SaveAssets();
-            _status = $"ContentLibrary: {lib.classes.Count} classes, {lib.races.Count} raças, {lib.genders.Count} gêneros, {lib.templates.Count} templates, {lib.items.Count} itens.";
+            _status = $"ContentLibrary: {lib.classes.Count} classes, {lib.races.Count} raças, {lib.genders.Count} gêneros, {lib.templates.Count} templates, {lib.items.Count} itens, {lib.skills.Count} skills, {lib.statuses.Count} status.";
             Selection.activeObject = lib;
         }
 
@@ -354,7 +405,7 @@ namespace Arcane_Aegis.EditorTools
                 _catScroll = EditorGUILayout.BeginScrollView(_catScroll);
                 for (int i = 0; i < _cats.Count; i++)
                 {
-                    int count = FindAll(_cats[i]).Length;
+                    int count = CachedAll(_cats[i]).Length;
                     if (Row($"{_cats[i].Icon}  {_cats[i].Name}", count, _cat == i, 30) && _cat != i) { _cat = i; Select(null); }
                 }
                 EditorGUILayout.EndScrollView();
@@ -366,7 +417,11 @@ namespace Arcane_Aegis.EditorTools
             var cat = _cats[_cat];
             using (new EditorGUILayout.VerticalScope(EditorStyles.helpBox, GUILayout.Width(214)))
             {
-                EditorGUILayout.LabelField($"{cat.Icon}  {cat.Name}", EditorStyles.boldLabel);
+                using (new EditorGUILayout.HorizontalScope())
+                {
+                    EditorGUILayout.LabelField($"{cat.Icon}  {cat.Name}", EditorStyles.boldLabel);
+                    if (GUILayout.Button("↻", GUILayout.Width(24))) InvalidateCache(); // manual rescan
+                }
                 _search = EditorGUILayout.TextField(_search, EditorStyles.toolbarSearchField);
                 using (new EditorGUILayout.HorizontalScope())
                 {
@@ -378,7 +433,7 @@ namespace Arcane_Aegis.EditorTools
                 }
                 DrawDivider();
                 _listScroll = EditorGUILayout.BeginScrollView(_listScroll);
-                var all = FindAll(cat);
+                var all = CachedAll(cat);
                 int shown = 0;
                 foreach (var so in all)
                 {
@@ -428,11 +483,12 @@ namespace Arcane_Aegis.EditorTools
             var sb = new SerializedObject(so);
             var idProp = sb.FindProperty("id");
             var nameProp = sb.FindProperty("displayName");
-            if (idProp != null) idProp.stringValue = Sanitize(name);
+            if (idProp != null && idProp.propertyType == SerializedPropertyType.String) idProp.stringValue = Sanitize(name); // skills use an int id → set it manually
             if (nameProp != null) nameProp.stringValue = name;
             sb.ApplyModifiedProperties();
 
             AssetDatabase.SaveAssets();
+            InvalidateCache();
             Select(so);
             _newName = "";
             _status = $"Criado: {name} em {cat.Folder}/";
@@ -440,10 +496,12 @@ namespace Arcane_Aegis.EditorTools
 
         private void RenameToId()
         {
-            string id = new SerializedObject(_selected).FindProperty("id")?.stringValue;
-            if (string.IsNullOrWhiteSpace(id)) { _status = "id vazio — preencha antes."; return; }
+            var idProp = new SerializedObject(_selected).FindProperty("id");
+            string id = idProp != null && idProp.propertyType == SerializedPropertyType.String ? idProp.stringValue : null;
+            if (string.IsNullOrWhiteSpace(id)) { _status = "id vazio (ou id numérico) — renomeie manualmente."; return; }
             AssetDatabase.RenameAsset(AssetDatabase.GetAssetPath(_selected), id);
             AssetDatabase.SaveAssets();
+            InvalidateCache();
             _status = $"Renomeado → {id}";
         }
 
@@ -452,6 +510,7 @@ namespace Arcane_Aegis.EditorTools
             if (_selected == null) return;
             if (!EditorUtility.DisplayDialog("Excluir", $"Apagar '{_selected.name}'?", "Apagar", "Cancelar")) return;
             AssetDatabase.DeleteAsset(AssetDatabase.GetAssetPath(_selected));
+            InvalidateCache();
             Select(null);
         }
 
@@ -463,6 +522,19 @@ namespace Arcane_Aegis.EditorTools
         }
 
         // ── assets ──
+        // Per-category cache: scanning the AssetDatabase every repaint (and we repaint on every mouse move) was the
+        // cause of the editor lag. We cache the loaded lists and only rescan on create/delete/rename, on focus, or ↻.
+        private readonly Dictionary<Type, ScriptableObject[]> _cache = new();
+
+        /// <summary>Cached asset list for a category (rescans only when the cache was invalidated).</summary>
+        private ScriptableObject[] CachedAll(Category cat)
+        {
+            if (!_cache.TryGetValue(cat.SoType, out var arr)) { arr = FindAll(cat); _cache[cat.SoType] = arr; }
+            return arr;
+        }
+
+        private void InvalidateCache() => _cache.Clear();
+
         private static ScriptableObject[] FindAll(Category cat)
         {
             var guids = AssetDatabase.FindAssets($"t:{cat.SoType.Name}");

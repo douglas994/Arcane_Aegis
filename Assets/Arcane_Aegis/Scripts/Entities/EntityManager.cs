@@ -48,6 +48,7 @@ namespace Arcane_Aegis.Entities
             view.Id = data.EntityId;
             view.Type = data.Type;
             view.WorldOffset = ZoneOffset; // render this continent's locals in global space
+            view.EquippedMainHand = data.MainHandItemId ?? ""; // visible weapon (replicated)
             view.Spawn(isLocal: false);
             view.Teleport(new Vector3(data.Position.X, data.Position.Y, data.Position.Z), data.Yaw);
 

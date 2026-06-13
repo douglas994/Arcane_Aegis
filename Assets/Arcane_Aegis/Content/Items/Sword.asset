@@ -49,4 +49,14 @@ MonoBehaviour:
   stackMax: 1
   icon: {fileID: 21300000, guid: 16fe12c64ddbb9f45b4001fba036ec85, type: 3}
   description: 
-  model3D: {fileID: 0}
+  model3D: {fileID: 5849569147354770399, guid: 71d769446940b604cbd24bfac7643c0c, type: 3}
+  gripAttach:
+    bone: 
+    position: {x: 0.096, y: 1.281, z: -0.264}
+    euler: {x: -2.712, y: 52.191, z: 172.702}
+    scale: {x: 0, y: 0, z: 0}
+  sheathAttach:
+    bone: 
+    position: {x: -0.3485707, y: -0.2780025, z: 0.6768419}
+    euler: {x: -80.846, y: 69.707, z: -97.044}
+    scale: {x: 0, y: 0, z: 0}

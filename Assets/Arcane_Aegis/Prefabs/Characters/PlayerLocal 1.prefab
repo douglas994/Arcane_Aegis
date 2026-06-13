@@ -1923,6 +1923,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::Arcane_Aegis.Entities.PlayerView
   Id: 0
   Type: 0
+  WorldOffset: {x: 0, y: 0, z: 0}
+  EquippedMainHand: 
   positionSmoothTime: 0.1
   rotationLerp: 12
   speedWindow: 0.25

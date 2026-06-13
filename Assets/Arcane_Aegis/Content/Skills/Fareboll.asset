@@ -1,0 +1,38 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 3adfc0573cffe9b4cb30c4031a5d4578, type: 3}
+  m_Name: Fareboll
+  m_EditorClassIdentifier: Assembly-CSharp::Arcane_Aegis.Content.SkillDefinitionSO
+  id: 1
+  displayName: Fareboll
+  castTime: 0
+  cooldown: 2
+  cost: 50
+  targeting: 4
+  range: 3.5
+  coneAngle: 90
+  width: 2
+  element: 1
+  requiredWeapon: 
+  effects:
+  - type: 0
+    amount: 20
+    scalesWith: 4
+    statusId: 
+  icon: {fileID: 599272692, guid: 39601f2209aa2204b949b9f60886246d, type: 3}
+  description: 
+  animTrigger: 
+  projectileVfx: {fileID: 0}
+  impactVfx: {fileID: 0}
+  castVfx: {fileID: 0}
+  castVfxFollows: 1
+  vfxLifetime: 2

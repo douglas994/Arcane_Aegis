@@ -23,6 +23,8 @@ namespace Arcane_Aegis.Controllers.Combat
         [SerializeField] private CharacterAnimator animator;
 
         private NetClient _net;
+        private Arcane_Aegis.Entities.PlayerView _self;               // own view → current mana + entity id
+        private bool _stunned;                                        // server CC: blocks casting (no prediction)
         private readonly Dictionary<byte, float> _readyAt = new();    // ability id → Time.time when castable again
         private readonly Dictionary<byte, float> _cdDuration = new(); // ability id → last-known cooldown (seconds)
         private readonly Dictionary<byte, float> _castAt = new();     // ability id → Time.time of the last cast (anchor)
@@ -31,6 +33,7 @@ namespace Arcane_Aegis.Controllers.Combat
         {
             if (input == null) input = GetComponent<PlayerInput>();
             if (animator == null) animator = GetComponentInChildren<CharacterAnimator>();
+            _self = GetComponent<Arcane_Aegis.Entities.PlayerView>();
             _net = NetClient.Instance ?? FindAnyObjectByType<NetClient>();
         }
 
@@ -56,7 +59,18 @@ namespace Arcane_Aegis.Controllers.Combat
         public bool TryCast(byte abilityId)
         {
             if (_net == null) return false;
+            if (_stunned) return false; // server rejects casts while stunned — don't predict
             if (GetCooldownRemaining(abilityId) > 0f) return false;
+
+            // Mana gate: only predict what the server will accept (else you swing with no effect AND the weapon
+            // never draws, since the rejected cast never marks you in-combat). Cost comes from the authored skill.
+            var so = Arcane_Aegis.Content.ContentLibrary.Active != null ? Arcane_Aegis.Content.ContentLibrary.Active.GetSkill(abilityId) : null;
+            int cost = so != null ? so.cost : 0;
+            if (cost > 0 && _self != null && _self.Mana < cost)
+            {
+                if (Arcane_Aegis.UI.Toast.Instance != null) Arcane_Aegis.UI.Toast.Instance.Show("Sem mana.");
+                return false;
+            }
 
             // optimistic local cooldown anchored to NOW (server corrects the duration in OnServerCooldown,
             // but keeps this same anchor so the bar is one continuous countdown — not a second cycle).
@@ -65,9 +79,15 @@ namespace Arcane_Aegis.Controllers.Combat
             _readyAt[abilityId] = Time.time + dur;
 
             _net.SendCast(abilityId, 0);                     // 0 = action aim; server uses our facing
-            if (animator != null) animator.TriggerAttack();  // predicted
+            if (_self != null) Arcane_Aegis.Combat.CombatStance.Mark(_self.Id); // draw the weapon on the swing (instant, no round-trip wait)
+            // predicted presentation: the skill's own anim + cast VFX (falls back to the generic attack).
+            if (Arcane_Aegis.Combat.CombatFx.Instance != null) Arcane_Aegis.Combat.CombatFx.Instance.PlayCast(transform, animator, abilityId);
+            else if (animator != null) animator.TriggerAttack();
             return true;
         }
+
+        /// <summary>Server CC replication: while stunned, casting is blocked (matches the server's rejection).</summary>
+        public void SetStunned(bool stunned) => _stunned = stunned;
 
         /// <summary>Server told us the real cooldown (on cast confirmation). Re-anchor to WHEN we cast, not now,
         /// so correcting the duration doesn't restart the bar (which looked like the cooldown playing twice).</summary>

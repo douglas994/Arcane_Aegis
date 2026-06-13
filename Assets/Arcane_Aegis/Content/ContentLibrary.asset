@@ -30,3 +30,7 @@ MonoBehaviour:
   - {fileID: 11400000, guid: ddc73e163bba89844abe8517ac1a01ba, type: 2}
   items:
   - {fileID: 11400000, guid: 1445cb1f9f596524fbe5107dc34a4858, type: 2}
+  skills:
+  - {fileID: 11400000, guid: 18760659a26472940aef6af37dce3acc, type: 2}
+  statuses:
+  - {fileID: 11400000, guid: ba7ec4e60320d41408fa70c56f01b334, type: 2}

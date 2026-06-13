@@ -20,6 +20,8 @@ namespace Arcane_Aegis.Entities
         public bool IsLocal { get; private set; }
         /// <summary>This player's combat (cooldown owner) — the action-bar casts through it.</summary>
         public PlayerCombat Combat { get; private set; }
+        /// <summary>This player's locomotion FSM (local only) — CC replication locks its input.</summary>
+        public LocomotionStateMachine Locomotion { get; private set; }
 
         public override void Spawn(bool isLocal)
         {
@@ -42,6 +44,7 @@ namespace Arcane_Aegis.Entities
             if (sender != null) sender.enabled = isLocal;
             if (combat != null) combat.enabled = isLocal;
             Combat = combat;
+            Locomotion = fsm;
 
             SetInterpolated(!isLocal);                 // remote follows snapshots; local drives via KCC
 
@@ -52,6 +55,10 @@ namespace Arcane_Aegis.Entities
             }
 
             ShowWorldVitals(!isLocal);                 // own HP is on the HUD, not above the head
+
+            // Show the equipped weapon model on EVERY player (local from inventory, remotes from the replicated id).
+            if (GetComponent<Arcane_Aegis.Combat.WeaponVisual>() == null)
+                gameObject.AddComponent<Arcane_Aegis.Combat.WeaponVisual>();
         }
     }
 }

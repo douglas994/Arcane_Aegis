@@ -25,6 +25,8 @@ namespace Arcane_Aegis.Network.Handlers
             NoticeCode.EquipBroken         => "Item quebrado — repare antes de equipar.",
             NoticeCode.TwoHandBlocksOffHand=> "Arma de duas mãos ocupa a off-hand.",
             NoticeCode.BagFull             => "Mochila cheia.",
+            NoticeCode.NeedWeapon          => "Você precisa da arma certa equipada.",
+            NoticeCode.ClassCannotCast     => "Sua classe não conhece essa skill.",
             _ => "",
         };
     }
