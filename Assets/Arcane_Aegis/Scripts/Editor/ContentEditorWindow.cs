@@ -158,7 +158,14 @@ namespace Arcane_Aegis.EditorTools
             foreach (var so in FindAllOf<ItemDefinitionSO>())
                 if (!string.IsNullOrWhiteSpace(so.id)) { Send(new I_Db_UpsertItemTemplate { Template = ToItemTemplate(so) }); items++; }
 
-            _status = $"Mirror ✓ — {n} conteúdo(s) genérico(s) + {items} item(ns) tipado(s).";
+            // Races/Classes/Genders → the TYPED stats-content tables (what the server actually reads). The legacy
+            // Content(Json) upserts above are ignored by the server after first boot — this is the real sync path.
+            var races = BuildRaces();
+            var classes = BuildClasses();
+            var genders = BuildGenders();
+            Send(new I_Db_UpsertStatsContent { Races = races, Classes = classes, Genders = genders });
+
+            _status = $"Mirror ✓ — {items} item(ns) + {races.Length} raça(s)/{classes.Length} classe(s)/{genders.Length} gênero(s) tipado(s).";
         }
 
         /// <summary>ItemDefinitionSO → the server's ItemTemplate. The SO uses the shared enums directly (no parsing);
@@ -204,6 +211,52 @@ namespace Arcane_Aegis.EditorTools
             HomeZoneId = r.homeZoneId,
         };
         private static GenderDto ToDto(GenderDefinitionSO g) => new() { Id = g.id, Name = g.displayName };
+
+        // ── typed stats-content builders (SO → the records the server reads from content.db) ──
+        private static RaceRecord[] BuildRaces()
+        {
+            var sos = FindAllOf<RaceDefinitionSO>();
+            var arr = new RaceRecord[sos.Length];
+            for (int i = 0; i < sos.Length; i++)
+            {
+                var r = sos[i];
+                arr[i] = new RaceRecord
+                {
+                    Id = r.id, Name = r.displayName, Element = ParseElement(r.element),
+                    Str = r.str, Dex = r.dex, Int = r.intel, Vit = r.vit, Spi = r.spi, Luk = r.luk, Armor = r.armor,
+                    HomeZoneId = r.homeZoneId,
+                };
+            }
+            return arr;
+        }
+
+        private static ClassRecord[] BuildClasses()
+        {
+            var sos = FindAllOf<ClassDefinitionSO>();
+            var arr = new ClassRecord[sos.Length];
+            for (int i = 0; i < sos.Length; i++)
+            {
+                var c = sos[i];
+                arr[i] = new ClassRecord
+                {
+                    Id = c.id, Name = c.displayName,
+                    Str = c.str, Dex = c.dex, Int = c.intel, Vit = c.vit, Spi = c.spi, Luk = c.luk,
+                    StrPerLevel = c.strPerLevel, DexPerLevel = c.dexPerLevel, IntPerLevel = c.intPerLevel,
+                    VitPerLevel = c.vitPerLevel, SpiPerLevel = c.spiPerLevel, LukPerLevel = c.lukPerLevel,
+                };
+            }
+            return arr;
+        }
+
+        private static GenderRecord[] BuildGenders()
+        {
+            var sos = FindAllOf<GenderDefinitionSO>();
+            var arr = new GenderRecord[sos.Length];
+            for (int i = 0; i < sos.Length; i++) arr[i] = new GenderRecord { Id = sos[i].id, Name = sos[i].displayName };
+            return arr;
+        }
+
+        private static byte ParseElement(string s) => System.Enum.TryParse<ElementType>(s, true, out var e) ? (byte)e : (byte)0;
 
         private void CollectIntoLibrary()
         {
