@@ -39,6 +39,11 @@ namespace Arcane_Aegis.Network.Handlers
 
             // per-skill impact VFX on the target (damage hits; projectile skills are handled by ProjectileManager).
             if (!heal && CombatFx.Instance != null) CombatFx.Instance.SpawnImpact(p.AbilityId, pos + Vector3.up);
+
+            // a monster that took damage → show/refresh its floating health bar (AoE → many at once).
+            if (!heal && EnemyHealthBars.Instance != null
+                && _entities.TryGetView(p.TargetId, out var tv) && tv.Type == EntityType.Monster)
+                EnemyHealthBars.Instance.Show(tv);
         }
     }
 }

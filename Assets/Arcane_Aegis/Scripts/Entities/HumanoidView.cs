@@ -22,6 +22,11 @@ namespace Arcane_Aegis.Entities
         public float HpFraction => MaxHp > 0 ? (float)Hp / MaxHp : 0f;
         public float ManaFraction => MaxMana > 0 ? (float)Mana / MaxMana : 0f;
 
+        // HP fraction usable for ANY entity: exact for the local player (Hp/MaxHp), or the snapshot's quantized
+        // HpPercent for remotes/monsters (which never get SetVitals). Drives the floating enemy health bars.
+        private float _snapHp01 = 1f;
+        public float BarHpFraction => MaxHp > 0 ? HpFraction : _snapHp01;
+
         // XP/level (own player only, from S2C_Experience) — drives the HUD XP bar.
         public ushort Level { get; private set; } = 1;
         public uint Xp { get; private set; }
@@ -51,7 +56,8 @@ namespace Arcane_Aegis.Entities
         public override void ApplySnapshot(in SnapshotEntry e)
         {
             base.ApplySnapshot(e);
-            if (vitals != null) vitals.SetHp01(e.HpPercent / 255f);
+            _snapHp01 = e.HpPercent / 255f;
+            if (vitals != null) vitals.SetHp01(_snapHp01);
 
             bool dead = e.State == MovementState.Dead;
             if (dead != _wasDead)
@@ -74,7 +80,7 @@ namespace Arcane_Aegis.Entities
 
             CancelInvoke(nameof(HideModel));
             if (dead) Invoke(nameof(HideModel), deathHideDelay); // let the death anim play, then hide
-            else SetRenderers(true);                             // respawn → show immediately
+            else { SnapToTarget(); SetRenderers(true); }         // respawn → snap to spawn (no slide) + show
         }
 
         private void HideModel() => SetRenderers(false);

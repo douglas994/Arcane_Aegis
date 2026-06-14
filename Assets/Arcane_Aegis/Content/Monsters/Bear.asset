@@ -17,7 +17,7 @@ MonoBehaviour:
   level: 1
   disposition: 0
   kind: 0
-  maxHp: 50
+  maxHp: 300
   str: 4
   dex: 4
   intel: 1
@@ -29,7 +29,7 @@ MonoBehaviour:
   aggroRadius: 10
   leashRadius: 22
   attackRange: 2.5
-  moveSpeed: 2
+  moveSpeed: 5
   attackAbilityId: 1
   xpReward: 50
   loot:

@@ -15,6 +15,7 @@ namespace Arcane_Aegis.Entities
     {
         public ushort Id;
         public EntityType Type;
+        public string DisplayName = ""; // clean name from the spawn packet (e.g. "Bear") — for UI labels
         public Vector3 WorldOffset; // continent offset (grid × worldSize) → render server LOCAL coords in GLOBAL space
         public string EquippedMainHand = ""; // replicated main-hand template id (remotes) → WeaponVisual shows the model
 
@@ -93,6 +94,16 @@ namespace Arcane_Aegis.Entities
             _vel = Vector3.zero;
             _hist.Clear();
             transform.SetPositionAndRotation(position, Quaternion.Euler(0f, yaw, 0f));
+        }
+
+        /// <summary>Hard-snaps to the latest snapshot target (no interpolation slide). Used on respawn so a creature
+        /// reviving back at its spawn doesn't visibly slide there from where it died. No-op for the local player.</summary>
+        public void SnapToTarget()
+        {
+            if (!_interpolate) return; // local player is driven by its own controller + server correction
+            _vel = Vector3.zero;
+            _hist.Clear();
+            transform.SetPositionAndRotation(_targetPos, Quaternion.Euler(0f, _targetYaw, 0f));
         }
 
         /// <summary>Plays the attack animation on this entity (driven by S2C_AbilityCast for remotes).</summary>

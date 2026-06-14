@@ -47,6 +47,7 @@ namespace Arcane_Aegis.Entities
             EntityView view = CreateView(data.EntityId, data.Name, data.Type, data.RaceId, data.ClassId, data.GenderId, data.MonsterId);
             view.Id = data.EntityId;
             view.Type = data.Type;
+            view.DisplayName = data.Name ?? "";
             view.WorldOffset = ZoneOffset; // render this continent's locals in global space
             view.EquippedMainHand = data.MainHandItemId ?? ""; // visible weapon (replicated)
             view.Spawn(isLocal: false);
