@@ -49,6 +49,7 @@ namespace Arcane_Aegis.EditorTools
         private string _status = "Desconectado.";
 
         private int _cat;
+        private int _spawnZone = 1; // zone id for the spawner export
         private string _newName = "";
         private string _search = "";
         private UnityEngine.Object _selected;
@@ -115,6 +116,8 @@ namespace Arcane_Aegis.EditorTools
                 // Skills + Statuses: authored as SOs (icon client-side); synced to the TYPED Ability/Status tables (see SyncAll).
                 new() { Name = "Skills",   Icon = "✨", SoType = typeof(SkillDefinitionSO),  Folder = "Skills",   ToContent = null },
                 new() { Name = "Statuses", Icon = "☠", SoType = typeof(StatusDefinitionSO), Folder = "Statuses", ToContent = null },
+                // Monsters: authored as SOs (stats/XP/loot); synced to the TYPED Monster table (see SyncAll).
+                new() { Name = "Monsters", Icon = "👹", SoType = typeof(MonsterDefinitionSO), Folder = "Monsters", ToContent = null },
             };
         }
 
@@ -176,7 +179,12 @@ namespace Arcane_Aegis.EditorTools
             foreach (var so in FindAllOf<StatusDefinitionSO>())
                 if (!string.IsNullOrWhiteSpace(so.id)) { Send(new I_Db_UpsertStatus { Status = ToStatusRecord(so) }); statuses++; }
 
-            _status = $"Mirror ✓ — {items} item(ns) + {races.Length}r/{classes.Length}c/{genders.Length}g + {skills} skill(s) + {statuses} status(es).";
+            // Monsters → the TYPED Monster/MonsterLoot tables in content.db.
+            int monsters = 0;
+            foreach (var so in FindAllOf<MonsterDefinitionSO>())
+                if (!string.IsNullOrWhiteSpace(so.id)) { Send(new I_Db_UpsertMonster { Monster = ToMonsterRecord(so) }); monsters++; }
+
+            _status = $"Mirror ✓ — {items} item(ns) + {races.Length}r/{classes.Length}c/{genders.Length}g + {skills} skill(s) + {statuses} status(es) + {monsters} monstro(s).";
         }
 
         /// <summary>ItemDefinitionSO → the server's ItemTemplate. The SO uses the shared enums directly (no parsing);
@@ -224,6 +232,30 @@ namespace Arcane_Aegis.EditorTools
                 Element = (byte)so.element,
                 RequiredWeapon = so.requiredWeapon ?? "",
                 Effects = effects.ToArray(),
+            };
+        }
+
+        /// <summary>MonsterDefinitionSO → the server's MonsterRecord (loot items emit their template id).</summary>
+        private static MonsterRecord ToMonsterRecord(MonsterDefinitionSO so)
+        {
+            var loot = new System.Collections.Generic.List<MonsterRecord.LootEntry>();
+            if (so.loot != null)
+                foreach (var e in so.loot)
+                    if (e.item != null && !string.IsNullOrWhiteSpace(e.item.id))
+                        loot.Add(new MonsterRecord.LootEntry { ItemId = e.item.id, ChancePct = e.chancePct, Min = e.min, Max = e.max });
+            return new MonsterRecord
+            {
+                Id = so.id, Name = so.displayName ?? "",
+                Level = (ushort)Mathf.Clamp(so.level, 1, ushort.MaxValue),
+                Str = so.str, Dex = so.dex, Int = so.intel, Vit = so.vit, Spi = so.spi, Luk = so.luk, Armor = so.armor,
+                Element = (byte)so.element,
+                AggroRadius = so.aggroRadius, LeashRadius = so.leashRadius, AttackRange = so.attackRange, MoveSpeed = so.moveSpeed,
+                AttackAbilityId = (byte)Mathf.Clamp(so.attackAbilityId, 1, 255),
+                XpReward = (uint)Mathf.Max(0, so.xpReward),
+                Disposition = (byte)so.disposition,
+                Kind = (byte)so.kind,
+                MaxHp = Mathf.Max(0, so.maxHp),
+                Loot = loot.ToArray(),
             };
         }
 
@@ -318,9 +350,10 @@ namespace Arcane_Aegis.EditorTools
             lib.items = new List<ItemDefinitionSO>(FindAllOf<ItemDefinitionSO>());
             lib.skills = new List<SkillDefinitionSO>(FindAllOf<SkillDefinitionSO>());
             lib.statuses = new List<StatusDefinitionSO>(FindAllOf<StatusDefinitionSO>());
+            lib.monsters = new List<MonsterDefinitionSO>(FindAllOf<MonsterDefinitionSO>());
             EditorUtility.SetDirty(lib);
             AssetDatabase.SaveAssets();
-            _status = $"ContentLibrary: {lib.classes.Count} classes, {lib.races.Count} raças, {lib.genders.Count} gêneros, {lib.templates.Count} templates, {lib.items.Count} itens, {lib.skills.Count} skills, {lib.statuses.Count} status.";
+            _status = $"ContentLibrary: {lib.classes.Count} classes, {lib.races.Count} raças, {lib.genders.Count} gêneros, {lib.templates.Count} templates, {lib.items.Count} itens, {lib.skills.Count} skills, {lib.statuses.Count} status, {lib.monsters.Count} monstros.";
             Selection.activeObject = lib;
         }
 
@@ -393,7 +426,37 @@ namespace Arcane_Aegis.EditorTools
                 using (new EditorGUI.DisabledScope(!_connected))
                     if (GUILayout.Button("⟳ SYNC ALL → DB", GUILayout.Width(140))) SyncAll();
                 GUI.backgroundColor = prev;
+                GUILayout.Space(6);
+                GUILayout.Label("Zona", GUILayout.Width(34));
+                _spawnZone = EditorGUILayout.IntField(_spawnZone, GUILayout.Width(34));
+                using (new EditorGUI.DisabledScope(!_connected))
+                    if (GUILayout.Button("⛺ Export Spawners", GUILayout.Width(140))) ExportSpawners();
             }
+        }
+
+        /// <summary>Reads every SpawnMarker in the open scene → wipes the zone's spawners in content.db, then inserts one
+        /// per marker (global x/z; the server converts to local). Author placement in the WORLD scene, then click this.</summary>
+        private void ExportSpawners()
+        {
+            if (!_connected) { _status = "Conecte primeiro."; return; }
+            var markers = UnityEngine.Object.FindObjectsByType<SpawnMarker>(FindObjectsSortMode.None);
+            Send(new I_Db_ClearSpawners { ZoneId = (byte)_spawnZone });
+            int n = 0;
+            foreach (var mk in markers)
+            {
+                if (mk.monster == null || string.IsNullOrWhiteSpace(mk.monster.id)) continue;
+                var pos = mk.transform.position;
+                Send(new I_Db_UpsertSpawner
+                {
+                    Spawner = new SpawnerRecord
+                    {
+                        ZoneId = (byte)_spawnZone, MonsterId = mk.monster.id,
+                        X = pos.x, Z = pos.z, Radius = mk.radius, Count = mk.count, RespawnSeconds = mk.respawnSeconds,
+                    }
+                });
+                n++;
+            }
+            _status = markers.Length == 0 ? "Nenhum SpawnMarker na cena." : $"Spawners exportados (zona {_spawnZone}): {n}. Reinicie a zona.";
         }
 
         private void DrawCategories()

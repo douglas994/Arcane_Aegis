@@ -1,0 +1,42 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 7c1a21d67275aa144b1ad5fbfe747d3c, type: 3}
+  m_Name: Bear
+  m_EditorClassIdentifier: Assembly-CSharp::Arcane_Aegis.Content.MonsterDefinitionSO
+  id: bear
+  displayName: Bear
+  level: 1
+  disposition: 0
+  kind: 0
+  maxHp: 50
+  str: 4
+  dex: 4
+  intel: 1
+  vit: 5
+  spi: 3
+  luk: 3
+  armor: 10
+  element: 4
+  aggroRadius: 10
+  leashRadius: 22
+  attackRange: 2.5
+  moveSpeed: 2
+  attackAbilityId: 1
+  xpReward: 50
+  loot:
+  - item: {fileID: 11400000, guid: 1445cb1f9f596524fbe5107dc34a4858, type: 2}
+    chancePct: 17
+    min: 1
+    max: 2
+  icon: {fileID: 21300000, guid: 6054318fc678eef4e97655493b73c580, type: 3}
+  description: 
+  model3D: {fileID: 7962199819078159310, guid: f5b41ba4c79702547a89de7544b80656, type: 3}

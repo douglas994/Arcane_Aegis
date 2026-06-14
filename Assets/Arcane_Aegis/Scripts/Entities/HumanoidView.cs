@@ -22,9 +22,20 @@ namespace Arcane_Aegis.Entities
         public float HpFraction => MaxHp > 0 ? (float)Hp / MaxHp : 0f;
         public float ManaFraction => MaxMana > 0 ? (float)Mana / MaxMana : 0f;
 
+        // XP/level (own player only, from S2C_Experience) — drives the HUD XP bar.
+        public ushort Level { get; private set; } = 1;
+        public uint Xp { get; private set; }
+        public uint XpToNext { get; private set; } = 1;
+        public float XpFraction => XpToNext > 0 ? Mathf.Clamp01((float)Xp / XpToNext) : 0f;
+
         public void SetVitals(int hp, int maxHp, int mana, int maxMana)
         {
             Hp = hp; MaxHp = maxHp; Mana = mana; MaxMana = maxMana;
+        }
+
+        public void SetExperience(ushort level, uint xp, uint xpToNext)
+        {
+            Level = level; Xp = xp; XpToNext = xpToNext;
         }
 
         private Renderer[] _renderers;

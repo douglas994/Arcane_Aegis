@@ -17,8 +17,8 @@ MonoBehaviour:
   castTime: 0
   cooldown: 2
   cost: 50
-  targeting: 4
-  range: 3.5
+  targeting: 1
+  range: 7.11
   coneAngle: 90
   width: 2
   element: 1
@@ -28,11 +28,16 @@ MonoBehaviour:
     amount: 20
     scalesWith: 4
     statusId: 
+  - type: 0
+    amount: 0
+    scalesWith: 0
+    statusId: 
   icon: {fileID: 599272692, guid: 39601f2209aa2204b949b9f60886246d, type: 3}
   description: 
   animTrigger: 
   projectileVfx: {fileID: 0}
   impactVfx: {fileID: 0}
+  areaVfx: {fileID: 0}
   castVfx: {fileID: 0}
   castVfxFollows: 1
   vfxLifetime: 2

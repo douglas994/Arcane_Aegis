@@ -105,6 +105,8 @@ namespace Arcane_Aegis.Network
             router.Register(new ProjectileDespawnHandler());
             router.Register(new ControlStateHandler(entities));
             router.Register(new EquipmentHandler(entities));
+            router.Register(new ExperienceHandler(entities));
+            router.Register(new LootGainedHandler());
             return router;
         }
 

@@ -44,7 +44,7 @@ namespace Arcane_Aegis.Entities
         {
             if (_views.ContainsKey(data.EntityId)) return;
 
-            EntityView view = CreateView(data.EntityId, data.Name, data.Type, data.RaceId, data.ClassId, data.GenderId);
+            EntityView view = CreateView(data.EntityId, data.Name, data.Type, data.RaceId, data.ClassId, data.GenderId, data.MonsterId);
             view.Id = data.EntityId;
             view.Type = data.Type;
             view.WorldOffset = ZoneOffset; // render this continent's locals in global space
@@ -60,7 +60,7 @@ namespace Arcane_Aegis.Entities
         public PlayerView SpawnLocal(ushort id, string name, Vector3 serverSpawn, string raceId, string classId, string genderId, Vector3 zoneOffset)
         {
             ZoneOffset = zoneOffset; // this continent's offset (server LOCAL → our GLOBAL)
-            EntityView view = CreateView(id, name, EntityType.Player, raceId, classId, genderId);
+            EntityView view = CreateView(id, name, EntityType.Player, raceId, classId, genderId, "");
             view.Id = id;
             view.Type = EntityType.Player;
             view.Spawn(isLocal: true);
@@ -135,10 +135,16 @@ namespace Arcane_Aegis.Entities
             if (_views.TryGetValue(id, out var view)) view.PlayAttack();
         }
 
-        private EntityView CreateView(ushort id, string name, EntityType type, string raceId, string classId, string genderId)
+        private EntityView CreateView(ushort id, string name, EntityType type, string raceId, string classId, string genderId, string monsterId)
         {
             GameObject prefab = PrefabFor(type);
             GameObject model = (library != null && !string.IsNullOrEmpty(raceId)) ? library.ResolveModel(raceId, classId, genderId) : null;
+            // Monsters: resolve the model from the monster definition (no race/class) → no more capsule.
+            if (model == null && library != null && !string.IsNullOrEmpty(monsterId))
+            {
+                var md = library.GetMonster(monsterId);
+                if (md != null && md.model3D != null) model = md.model3D;
+            }
 
             GameObject go;
             if (prefab != null)
@@ -194,7 +200,8 @@ namespace Arcane_Aegis.Entities
                 for (int i = 0; i < typePrefabs.Length; i++)
                     if (typePrefabs[i].type == type && typePrefabs[i].prefab != null)
                         return typePrefabs[i].prefab;
-            return characterPrefab;
+            // Monsters fall back to "model IS the entity" (no player-prefab capsule) unless a dedicated prefab is set.
+            return type == EntityType.Monster ? null : characterPrefab;
         }
     }
 }

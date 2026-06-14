@@ -27,6 +27,7 @@ namespace Arcane_Aegis.Network.Handlers
             NoticeCode.BagFull             => "Mochila cheia.",
             NoticeCode.NeedWeapon          => "Você precisa da arma certa equipada.",
             NoticeCode.ClassCannotCast     => "Sua classe não conhece essa skill.",
+            NoticeCode.DiedDroppedItem     => "Você perdeu um item ao morrer!",
             _ => "",
         };
     }
