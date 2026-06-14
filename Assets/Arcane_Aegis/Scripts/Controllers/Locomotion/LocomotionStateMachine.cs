@@ -31,8 +31,12 @@ namespace Arcane_Aegis.Controllers.Locomotion
         public bool Rooted { get; private set; }
         /// <summary>Move-speed multiplier (1 = normal, &lt;1 = slowed).</summary>
         public float SpeedMult { get; private set; } = 1f;
-        /// <summary>True while a stun/root forbids horizontal movement.</summary>
-        public bool MoveBlocked => Stunned || Rooted;
+        /// <summary>True while harvesting a resource node (locks movement like a root).</summary>
+        public bool Gathering { get; private set; }
+        public void SetGathering(bool on) => Gathering = on;
+
+        /// <summary>True while a stun/root/gather forbids horizontal movement.</summary>
+        public bool MoveBlocked => Stunned || Rooted || Gathering;
 
         /// <summary>Applies the server's authoritative CC state to the local input (no rubber-band).</summary>
         public void SetControl(bool stunned, bool rooted, float speedMult)
@@ -77,6 +81,16 @@ namespace Arcane_Aegis.Controllers.Locomotion
         }
 
         public bool IsGrounded => Motor.GroundingStatus.IsStableOnGround;
+
+        /// <summary>Instantly turns the character to face a world point on the XZ plane (used when starting to gather → face
+        /// the node). Goes through the KCC motor's SetRotation so it isn't overridden next frame; the MovementSender then
+        /// reports the new yaw, so remote viewers see it too.</summary>
+        public void FaceWorldPoint(Vector3 worldPoint)
+        {
+            Vector3 dir = worldPoint - transform.position; dir.y = 0f;
+            if (dir.sqrMagnitude < 1e-4f) return;
+            Motor.SetRotation(Quaternion.LookRotation(dir.normalized, Vector3.up));
+        }
 
         /// <summary>Queues a jump impulse and ungrounds the motor (call on a grounded jump press).</summary>
         public void RequestJump()

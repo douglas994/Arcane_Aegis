@@ -118,6 +118,8 @@ namespace Arcane_Aegis.EditorTools
                 new() { Name = "Statuses", Icon = "☠", SoType = typeof(StatusDefinitionSO), Folder = "Statuses", ToContent = null },
                 // Monsters: authored as SOs (stats/XP/loot); synced to the TYPED Monster table (see SyncAll).
                 new() { Name = "Monsters", Icon = "👹", SoType = typeof(MonsterDefinitionSO), Folder = "Monsters", ToContent = null },
+                // Resource nodes (trees/rocks): authored as SOs; synced to the TYPED ResourceNode table (see SyncAll).
+                new() { Name = "Resources", Icon = "🌳", SoType = typeof(ResourceNodeDefinitionSO), Folder = "Resources", ToContent = null },
             };
         }
 
@@ -184,7 +186,12 @@ namespace Arcane_Aegis.EditorTools
             foreach (var so in FindAllOf<MonsterDefinitionSO>())
                 if (!string.IsNullOrWhiteSpace(so.id)) { Send(new I_Db_UpsertMonster { Monster = ToMonsterRecord(so) }); monsters++; }
 
-            _status = $"Mirror ✓ — {items} item(ns) + {races.Length}r/{classes.Length}c/{genders.Length}g + {skills} skill(s) + {statuses} status(es) + {monsters} monstro(s).";
+            // Resource nodes → the TYPED ResourceNode/ResourceYield tables in content.db.
+            int nodes = 0;
+            foreach (var so in FindAllOf<ResourceNodeDefinitionSO>())
+                if (!string.IsNullOrWhiteSpace(so.id)) { Send(new I_Db_UpsertResourceNode { Node = ToResourceNodeRecord(so) }); nodes++; }
+
+            _status = $"Mirror ✓ — {items} item(ns) + {races.Length}r/{classes.Length}c/{genders.Length}g + {skills} skill(s) + {statuses} status(es) + {monsters} monstro(s) + {nodes} nó(s).";
         }
 
         /// <summary>ItemDefinitionSO → the server's ItemTemplate. The SO uses the shared enums directly (no parsing);
@@ -256,6 +263,24 @@ namespace Arcane_Aegis.EditorTools
                 Kind = (byte)so.kind,
                 MaxHp = Mathf.Max(0, so.maxHp),
                 Loot = loot.ToArray(),
+            };
+        }
+
+        /// <summary>ResourceNodeDefinitionSO → the server's ResourceNodeRecord (yield items emit their template id).</summary>
+        private static ResourceNodeRecord ToResourceNodeRecord(ResourceNodeDefinitionSO so)
+        {
+            var yields = new System.Collections.Generic.List<ResourceNodeRecord.Yield>();
+            if (so.yields != null)
+                foreach (var y in so.yields)
+                    if (y.item != null && !string.IsNullOrWhiteSpace(y.item.id))
+                        yields.Add(new ResourceNodeRecord.Yield { ItemId = y.item.id, ChancePct = y.chancePct, Min = y.min, Max = y.max });
+            return new ResourceNodeRecord
+            {
+                Id = so.id, Name = so.displayName ?? "",
+                Profession = (byte)so.profession, RequiredTool = so.requiredTool ?? "",
+                GatherSeconds = so.gatherSeconds, Charges = Mathf.Max(1, so.charges), RespawnSeconds = so.respawnSeconds,
+                XpReward = (uint)Mathf.Max(0, so.xpReward),
+                Yields = yields.ToArray(),
             };
         }
 
@@ -351,6 +376,7 @@ namespace Arcane_Aegis.EditorTools
             lib.skills = new List<SkillDefinitionSO>(FindAllOf<SkillDefinitionSO>());
             lib.statuses = new List<StatusDefinitionSO>(FindAllOf<StatusDefinitionSO>());
             lib.monsters = new List<MonsterDefinitionSO>(FindAllOf<MonsterDefinitionSO>());
+            lib.resourceNodes = new List<ResourceNodeDefinitionSO>(FindAllOf<ResourceNodeDefinitionSO>());
             EditorUtility.SetDirty(lib);
             AssetDatabase.SaveAssets();
             _status = $"ContentLibrary: {lib.classes.Count} classes, {lib.races.Count} raças, {lib.genders.Count} gêneros, {lib.templates.Count} templates, {lib.items.Count} itens, {lib.skills.Count} skills, {lib.statuses.Count} status, {lib.monsters.Count} monstros.";
@@ -444,13 +470,17 @@ namespace Arcane_Aegis.EditorTools
             int n = 0;
             foreach (var mk in markers)
             {
-                if (mk.monster == null || string.IsNullOrWhiteSpace(mk.monster.id)) continue;
+                // node takes priority over monster; skip empty markers.
+                byte kind; string contentId;
+                if (mk.node != null && !string.IsNullOrWhiteSpace(mk.node.id)) { kind = 1; contentId = mk.node.id; }
+                else if (mk.monster != null && !string.IsNullOrWhiteSpace(mk.monster.id)) { kind = 0; contentId = mk.monster.id; }
+                else continue;
                 var pos = mk.transform.position;
                 Send(new I_Db_UpsertSpawner
                 {
                     Spawner = new SpawnerRecord
                     {
-                        ZoneId = (byte)_spawnZone, MonsterId = mk.monster.id,
+                        ZoneId = (byte)_spawnZone, Kind = kind, MonsterId = contentId,
                         X = pos.x, Z = pos.z, Radius = mk.radius, Count = mk.count, RespawnSeconds = mk.respawnSeconds,
                     }
                 });

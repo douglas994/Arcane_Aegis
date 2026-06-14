@@ -29,6 +29,7 @@ MonoBehaviour:
   - {fileID: 11400000, guid: dcdaf2157f7bb0f47a7846bf2417e13e, type: 2}
   - {fileID: 11400000, guid: ddc73e163bba89844abe8517ac1a01ba, type: 2}
   items:
+  - {fileID: 11400000, guid: a096f8a7c04cf704cbaac2ec7bfa8c3c, type: 2}
   - {fileID: 11400000, guid: 1445cb1f9f596524fbe5107dc34a4858, type: 2}
   skills:
   - {fileID: 11400000, guid: 18760659a26472940aef6af37dce3acc, type: 2}
@@ -36,3 +37,5 @@ MonoBehaviour:
   - {fileID: 11400000, guid: ba7ec4e60320d41408fa70c56f01b334, type: 2}
   monsters:
   - {fileID: 11400000, guid: ad21ba8cf6245444994b3ac3d0e23dec, type: 2}
+  resourceNodes:
+  - {fileID: 11400000, guid: 7e2bda1bcf7641641a1ae1db3352eda7, type: 2}

@@ -25,6 +25,7 @@ namespace Arcane_Aegis.Content
         public List<SkillDefinitionSO> skills = new();
         public List<StatusDefinitionSO> statuses = new();
         public List<MonsterDefinitionSO> monsters = new();
+        public List<ResourceNodeDefinitionSO> resourceNodes = new();
 
         public ClassDefinitionSO GetClass(string id) => classes.Find(c => c != null && c.id == id);
         public RaceDefinitionSO GetRace(string id) => races.Find(r => r != null && r.id == id);
@@ -34,6 +35,7 @@ namespace Arcane_Aegis.Content
         public SkillDefinitionSO GetSkill(int id) => skills.Find(s => s != null && s.id == id);   // for the skill bar (icon/cooldown)
         public StatusDefinitionSO GetStatus(string id) => statuses.Find(s => s != null && s.id == id);
         public MonsterDefinitionSO GetMonster(string id) => monsters.Find(m => m != null && m.id == id);
+        public ResourceNodeDefinitionSO GetResourceNode(string id) => resourceNodes.Find(n => n != null && n.id == id);
 
         /// <summary>The 3D model for a character's look: the CharacterTemplate matched by race+class, then that
         /// gender's model. Falls back to same-race (any class), then any template with a model. Null if none.

@@ -107,6 +107,9 @@ namespace Arcane_Aegis.Network
             router.Register(new EquipmentHandler(entities));
             router.Register(new ExperienceHandler(entities));
             router.Register(new LootGainedHandler());
+            router.Register(new GatherStartHandler(entities));
+            router.Register(new GatherEndHandler(entities));
+            router.Register(new ProfessionXpHandler());
             return router;
         }
 
@@ -138,6 +141,13 @@ namespace Arcane_Aegis.Network
         {
             if (!CanSend) return;
             Send(new C2S_CastAbility { AbilityId = abilityId, TargetId = targetId }, DeliveryMethod.ReliableOrdered);
+        }
+
+        /// <summary>Asks the server to harvest a resource node (server validates range/tool/charges + resolves).</summary>
+        public void SendGather(ushort nodeId)
+        {
+            if (!CanSend) return;
+            Send(new C2S_Gather { NodeId = nodeId }, DeliveryMethod.ReliableOrdered);
         }
 
         /// <summary>Asks the server to move an item to a (container, slot): equip / unequip / reorder. Server validates;

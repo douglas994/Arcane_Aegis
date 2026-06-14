@@ -1,0 +1,30 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 88336bd75053085448b47cc954a44dc7, type: 3}
+  m_Name: Tree
+  m_EditorClassIdentifier: Assembly-CSharp::Arcane_Aegis.Content.ResourceNodeDefinitionSO
+  id: tree
+  displayName: Tree
+  profession: 0
+  requiredTool: 
+  gatherSeconds: 3
+  charges: 1
+  respawnSeconds: 30
+  xpReward: 15
+  yields:
+  - item: {fileID: 11400000, guid: a096f8a7c04cf704cbaac2ec7bfa8c3c, type: 2}
+    chancePct: 100
+    min: 1
+    max: 1
+  icon: {fileID: 1348512535, guid: 39601f2209aa2204b949b9f60886246d, type: 3}
+  description: 
+  model3D: {fileID: 3249947868918741787, guid: 46530cee901304544ac3b0b13698a6a3, type: 3}

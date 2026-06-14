@@ -24,6 +24,8 @@ namespace Arcane_Aegis.Controllers
         [SerializeField] private string groundedParam = "Grounded";
         [SerializeField] private string attackTrigger = "Attack";
         [SerializeField] private string deadParam = "Dead";
+        [SerializeField] private string gatheringParam = "Gathering"; // bool: true while harvesting
+        [SerializeField] private string gatherTypeParam = "GatherType"; // int: which action (= Profession byte: 0 chop, 1 mine, …)
         [SerializeField] private float speedDamp = 0.1f;
         [SerializeField] private float maxSpeed = 7f; // = DashSpeed; normalizes Speed to 0..1 (idle 0, run ~0.5, dash 1)
 
@@ -33,8 +35,8 @@ namespace Arcane_Aegis.Controllers
         /// <summary>Horizontal speed (m/s) for REMOTES, set by EntityView from snapshot positions. Ignored if an FSM is assigned.</summary>
         public float SourceSpeed { get; set; }
 
-        private int _speedHash, _groundedHash, _attackHash, _deadHash;
-        private bool _hasSpeed, _hasGrounded, _hasAttack, _hasDead;
+        private int _speedHash, _groundedHash, _attackHash, _deadHash, _gatheringHash, _gatherTypeHash;
+        private bool _hasSpeed, _hasGrounded, _hasAttack, _hasDead, _hasGathering, _hasGatherType;
 
         private void Start()
         {
@@ -50,6 +52,10 @@ namespace Arcane_Aegis.Controllers
                 _hasAttack = HasParam(attackTrigger);
                 _deadHash = Animator.StringToHash(deadParam);
                 _hasDead = HasParam(deadParam);
+                _gatheringHash = Animator.StringToHash(gatheringParam);
+                _hasGathering = HasParam(gatheringParam);
+                _gatherTypeHash = Animator.StringToHash(gatherTypeParam);
+                _hasGatherType = HasParam(gatherTypeParam);
             }
         }
 
@@ -100,6 +106,17 @@ namespace Arcane_Aegis.Controllers
         public void SetDead(bool dead)
         {
             if (animator != null && _hasDead) animator.SetBool(_deadHash, dead);
+        }
+
+        /// <summary>Drives the gather animation: <paramref name="gatherType"/> picks the action (= Profession byte:
+        /// 0 chop / 1 mine / 2 pick / …) and <paramref name="on"/> holds it while harvesting. Author one looping
+        /// state per profession gated on GatherType, transitioning back to locomotion when Gathering is false.
+        /// Missing params are ignored, so it won't error before you wire them.</summary>
+        public void SetGather(bool on, int gatherType = 0)
+        {
+            if (animator == null) return;
+            if (on && _hasGatherType) animator.SetInteger(_gatherTypeHash, gatherType);
+            if (_hasGathering) animator.SetBool(_gatheringHash, on);
         }
 
         private bool HasParam(string name)

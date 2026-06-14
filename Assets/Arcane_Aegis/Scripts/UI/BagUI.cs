@@ -80,10 +80,12 @@ namespace Arcane_Aegis.UI
                     Sprite icon = so != null ? so.icon : null;
                     uint id = item.InstanceId;
                     ItemInstance captured = item; // for the split/hover closures
+                    string qty = item.Quantity > 1 ? item.Quantity.ToString() : null; // stack count in the slot corner
                     slot.Bind(icon, Describe(item, so, store),
                         () => OnSlotClicked(i, id),         // left: pick/place
                         () => AltAction(captured, so),      // right: use (consumable) or split (other stack)
-                        on => HoverTooltip(on, captured, so));
+                        on => HoverTooltip(on, captured, so),
+                        qty);
                     slot.SetPicked(cursor != null && cursor.PickedInstanceId == id);
                 }
                 else
@@ -143,7 +145,7 @@ namespace Arcane_Aegis.UI
         {
             string name = so != null && !string.IsNullOrEmpty(so.displayName) ? so.displayName
                         : (store.TryGetTemplate(it.TemplateId, out var t) && !string.IsNullOrEmpty(t.Name) ? t.Name : it.TemplateId);
-            if (it.Quantity > 1) name += $" x{it.Quantity}";
+            // Quantity now shows in the slot's dedicated corner text (BagSlot.quantity); keep only the refine suffix here.
             if (it.RefineLevel > 0) name += $" +{it.RefineLevel}";
             return name;
         }

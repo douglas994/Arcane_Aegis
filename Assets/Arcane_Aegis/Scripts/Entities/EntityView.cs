@@ -1,3 +1,4 @@
+using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using ArcaneShared.Enums;
@@ -119,6 +120,33 @@ namespace Arcane_Aegis.Entities
             if (Arcane_Aegis.Combat.CombatFx.Instance != null)
                 Arcane_Aegis.Combat.CombatFx.Instance.PlayCast(transform, characterAnimator, abilityId);
             else if (characterAnimator != null) characterAnimator.TriggerAttack();
+        }
+
+        private Coroutine _gatherAnim;
+
+        /// <summary>Plays the gather animation for <paramref name="profession"/> (0 chop / 1 mine / 2 pick / …) while
+        /// harvesting. The server ends it authoritatively (S2C_GatherEnd → <see cref="StopGather"/>); the
+        /// <paramref name="seconds"/> timer here is only a safety net if that packet is ever lost.</summary>
+        public void PlayGather(byte profession, float seconds)
+        {
+            if (characterAnimator == null) return;
+            if (_gatherAnim != null) StopCoroutine(_gatherAnim);
+            characterAnimator.SetGather(true, profession);
+            _gatherAnim = seconds > 0f ? StartCoroutine(EndGatherAfter(seconds + 2f)) : null;
+        }
+
+        /// <summary>Stops the gather animation now (the server's authoritative end, or a cancel/interrupt).</summary>
+        public void StopGather()
+        {
+            if (_gatherAnim != null) { StopCoroutine(_gatherAnim); _gatherAnim = null; }
+            if (characterAnimator != null) characterAnimator.SetGather(false);
+        }
+
+        private IEnumerator EndGatherAfter(float seconds)
+        {
+            yield return new WaitForSeconds(seconds);
+            if (characterAnimator != null) characterAnimator.SetGather(false);
+            _gatherAnim = null;
         }
 
         private void Update()

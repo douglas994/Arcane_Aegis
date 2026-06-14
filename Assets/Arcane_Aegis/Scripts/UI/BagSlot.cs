@@ -16,6 +16,8 @@ namespace Arcane_Aegis.UI
     {
         [SerializeField] private Image icon;
         [SerializeField] private TMP_Text label;
+        [Tooltip("Optional: the stack count, shown only when the stack is > 1 (place it in a corner of the slot).")]
+        [SerializeField] private TMP_Text quantity;
         [Tooltip("Optional: a frame/glow shown while this slot's item is picked (held by the cursor).")]
         [SerializeField] private GameObject pickedHighlight;
 
@@ -23,8 +25,9 @@ namespace Arcane_Aegis.UI
         private Action _onAltClick;    // right click (split)
         private Action<bool> _onHover; // enter (true) / exit (false)
 
-        /// <summary>Fills the slot and wires its interactions. Empty slots pass a null sprite + empty text but still get a left-click.</summary>
-        public void Bind(Sprite sprite, string text, Action onClick, Action onAltClick = null, Action<bool> onHover = null)
+        /// <summary>Fills the slot and wires its interactions. Empty slots pass a null sprite + empty text but still get a
+        /// left-click. <paramref name="quantityText"/> is the stack count shown only when > 1 (null/empty → hidden).</summary>
+        public void Bind(Sprite sprite, string text, Action onClick, Action onAltClick = null, Action<bool> onHover = null, string quantityText = null)
         {
             _onClick = onClick;
             _onAltClick = onAltClick;
@@ -35,6 +38,12 @@ namespace Arcane_Aegis.UI
                 icon.enabled = sprite != null; // hide the icon graphic when the slot is empty
             }
             if (label != null) label.text = text;
+            if (quantity != null)
+            {
+                bool show = !string.IsNullOrEmpty(quantityText);
+                quantity.text = show ? quantityText : "";
+                quantity.gameObject.SetActive(show); // hide entirely for empty/single so no stray "1" or background shows
+            }
         }
 
         public void SetPicked(bool on)

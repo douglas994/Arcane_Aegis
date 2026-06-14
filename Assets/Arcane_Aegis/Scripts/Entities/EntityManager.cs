@@ -140,11 +140,11 @@ namespace Arcane_Aegis.Entities
         {
             GameObject prefab = PrefabFor(type);
             GameObject model = (library != null && !string.IsNullOrEmpty(raceId)) ? library.ResolveModel(raceId, classId, genderId) : null;
-            // Monsters: resolve the model from the monster definition (no race/class) → no more capsule.
+            // Monsters / resource nodes: resolve the model from the content definition by the replicated id (no capsule).
             if (model == null && library != null && !string.IsNullOrEmpty(monsterId))
             {
-                var md = library.GetMonster(monsterId);
-                if (md != null && md.model3D != null) model = md.model3D;
+                if (type == EntityType.ResourceNode) { var nd = library.GetResourceNode(monsterId); if (nd != null && nd.model3D != null) model = nd.model3D; }
+                else { var md = library.GetMonster(monsterId); if (md != null && md.model3D != null) model = md.model3D; }
             }
 
             GameObject go;
@@ -164,7 +164,7 @@ namespace Arcane_Aegis.Entities
             go.name = $"Entity_{id}_{name}";
 
             EntityView view = go.GetComponent<EntityView>();
-            if (view == null) view = go.AddComponent<PlayerView>(); // fallback so it still works
+            if (view == null) view = type == EntityType.Player ? go.AddComponent<PlayerView>() : go.AddComponent<EntityView>(); // players need the control stack; nodes/mobs just need a view
             return view;
         }
 
@@ -201,8 +201,22 @@ namespace Arcane_Aegis.Entities
                 for (int i = 0; i < typePrefabs.Length; i++)
                     if (typePrefabs[i].type == type && typePrefabs[i].prefab != null)
                         return typePrefabs[i].prefab;
-            // Monsters fall back to "model IS the entity" (no player-prefab capsule) unless a dedicated prefab is set.
-            return type == EntityType.Monster ? null : characterPrefab;
+            // Monsters/nodes fall back to "model IS the entity" (no player-prefab capsule) unless a dedicated prefab is set.
+            return type is EntityType.Monster or EntityType.ResourceNode ? null : characterPrefab;
+        }
+
+        /// <summary>Nearest resource node within <paramref name="range"/> of a world position (for "press to gather").</summary>
+        public EntityView NearestResourceNode(Vector3 worldPos, float range)
+        {
+            EntityView best = null;
+            float bestSq = range * range;
+            foreach (var v in _views.Values)
+            {
+                if (v == null || v.Type != EntityType.ResourceNode) continue;
+                float d = (v.transform.position - worldPos).sqrMagnitude;
+                if (d <= bestSq) { bestSq = d; best = v; }
+            }
+            return best;
         }
     }
 }
