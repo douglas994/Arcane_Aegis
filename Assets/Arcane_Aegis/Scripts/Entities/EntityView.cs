@@ -17,6 +17,7 @@ namespace Arcane_Aegis.Entities
         public ushort Id;
         public EntityType Type;
         public string DisplayName = ""; // clean name from the spawn packet (e.g. "Bear") — for UI labels
+        public string ContentId = "";   // replicated def id (monster/node/vendor) — resolves shop, etc.
         public Vector3 WorldOffset; // continent offset (grid × worldSize) → render server LOCAL coords in GLOBAL space
         public string EquippedMainHand = ""; // replicated main-hand template id (remotes) → WeaponVisual shows the model
 

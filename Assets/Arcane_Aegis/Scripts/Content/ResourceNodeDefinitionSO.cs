@@ -22,6 +22,7 @@ namespace Arcane_Aegis.Content
         public string id;
         public string displayName;
         [Tooltip("Profissão que este nó treina.")] public Profession profession = Profession.Woodcutting;
+        [Tooltip("Nível mínimo da profissão pra coletar (1 = qualquer um).")] public ushort requiredLevel = 1;
         [Tooltip("Categoria de ferramenta exigida (ex.: 'axe'). Vazio = mãos.")] public string requiredTool = "";
         [Tooltip("Segundos por coleta.")] public float gatherSeconds = 3f;
         [Tooltip("Quantas coletas antes de esgotar.")] public int charges = 5;

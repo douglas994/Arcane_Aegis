@@ -144,6 +144,7 @@ namespace Arcane_Aegis.Entities
             if (model == null && library != null && !string.IsNullOrEmpty(monsterId))
             {
                 if (type == EntityType.ResourceNode) { var nd = library.GetResourceNode(monsterId); if (nd != null && nd.model3D != null) model = nd.model3D; }
+                else if (type == EntityType.Vendor) { var vd = library.GetVendor(monsterId); if (vd != null && vd.model3D != null) model = vd.model3D; }
                 else { var md = library.GetMonster(monsterId); if (md != null && md.model3D != null) model = md.model3D; }
             }
 
@@ -165,6 +166,7 @@ namespace Arcane_Aegis.Entities
 
             EntityView view = go.GetComponent<EntityView>();
             if (view == null) view = type == EntityType.Player ? go.AddComponent<PlayerView>() : go.AddComponent<EntityView>(); // players need the control stack; nodes/mobs just need a view
+            view.ContentId = monsterId ?? ""; // replicated def id (monster/node/vendor) — used to resolve vendor shop, etc.
             return view;
         }
 
@@ -202,17 +204,22 @@ namespace Arcane_Aegis.Entities
                     if (typePrefabs[i].type == type && typePrefabs[i].prefab != null)
                         return typePrefabs[i].prefab;
             // Monsters/nodes fall back to "model IS the entity" (no player-prefab capsule) unless a dedicated prefab is set.
-            return type is EntityType.Monster or EntityType.ResourceNode ? null : characterPrefab;
+            return type is EntityType.Monster or EntityType.ResourceNode or EntityType.Vendor ? null : characterPrefab;
         }
 
         /// <summary>Nearest resource node within <paramref name="range"/> of a world position (for "press to gather").</summary>
-        public EntityView NearestResourceNode(Vector3 worldPos, float range)
+        public EntityView NearestResourceNode(Vector3 worldPos, float range) => Nearest(worldPos, range, EntityType.ResourceNode);
+
+        /// <summary>Nearest vendor within <paramref name="range"/> of a world position (for "press to shop").</summary>
+        public EntityView NearestVendor(Vector3 worldPos, float range) => Nearest(worldPos, range, EntityType.Vendor);
+
+        private EntityView Nearest(Vector3 worldPos, float range, EntityType type)
         {
             EntityView best = null;
             float bestSq = range * range;
             foreach (var v in _views.Values)
             {
-                if (v == null || v.Type != EntityType.ResourceNode) continue;
+                if (v == null || v.Type != type) continue;
                 float d = (v.transform.position - worldPos).sqrMagnitude;
                 if (d <= bestSq) { bestSq = d; best = v; }
             }

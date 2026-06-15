@@ -109,6 +109,9 @@ namespace Arcane_Aegis.Network
             router.Register(new LootGainedHandler());
             router.Register(new GatherStartHandler(entities));
             router.Register(new GatherEndHandler(entities));
+            router.Register(new CraftStartHandler());
+            router.Register(new CraftEndHandler());
+            router.Register(new CurrencyHandler());
             router.Register(new ProfessionXpHandler());
             return router;
         }
@@ -148,6 +151,27 @@ namespace Arcane_Aegis.Network
         {
             if (!CanSend) return;
             Send(new C2S_Gather { NodeId = nodeId }, DeliveryMethod.ReliableOrdered);
+        }
+
+        /// <summary>Asks the server to craft a recipe (server validates profession/ingredients/space + resolves on a timer).</summary>
+        public void SendCraft(string recipeId)
+        {
+            if (!CanSend || string.IsNullOrEmpty(recipeId)) return;
+            Send(new C2S_Craft { RecipeId = recipeId }, DeliveryMethod.ReliableOrdered);
+        }
+
+        /// <summary>Asks the server to buy an item from a nearby vendor (server validates vendor/gold/space).</summary>
+        public void SendVendorBuy(string itemId, ushort qty)
+        {
+            if (!CanSend || string.IsNullOrEmpty(itemId) || qty == 0) return;
+            Send(new C2S_VendorBuy { ItemId = itemId, Qty = qty }, DeliveryMethod.ReliableOrdered);
+        }
+
+        /// <summary>Asks the server to sell a bag item to a nearby vendor (server validates + credits the wallet).</summary>
+        public void SendVendorSell(uint instanceId, ushort qty)
+        {
+            if (!CanSend || qty == 0) return;
+            Send(new C2S_VendorSell { InstanceId = instanceId, Qty = qty }, DeliveryMethod.ReliableOrdered);
         }
 
         /// <summary>Asks the server to move an item to a (container, slot): equip / unequip / reorder. Server validates;

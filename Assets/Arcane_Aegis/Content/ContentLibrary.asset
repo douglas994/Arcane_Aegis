@@ -39,3 +39,9 @@ MonoBehaviour:
   - {fileID: 11400000, guid: ad21ba8cf6245444994b3ac3d0e23dec, type: 2}
   resourceNodes:
   - {fileID: 11400000, guid: 7e2bda1bcf7641641a1ae1db3352eda7, type: 2}
+  recipes:
+  - {fileID: 11400000, guid: 0e47199c9cb09f94cbf8525c8748ff76, type: 2}
+  currencies:
+  - {fileID: 11400000, guid: 234922c8187c9ad4b875320885a94cf8, type: 2}
+  vendors:
+  - {fileID: 11400000, guid: a6e632df28ec52c48abe81c033f9bcd8, type: 2}

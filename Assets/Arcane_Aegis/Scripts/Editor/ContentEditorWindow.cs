@@ -120,6 +120,12 @@ namespace Arcane_Aegis.EditorTools
                 new() { Name = "Monsters", Icon = "👹", SoType = typeof(MonsterDefinitionSO), Folder = "Monsters", ToContent = null },
                 // Resource nodes (trees/rocks): authored as SOs; synced to the TYPED ResourceNode table (see SyncAll).
                 new() { Name = "Resources", Icon = "🌳", SoType = typeof(ResourceNodeDefinitionSO), Folder = "Resources", ToContent = null },
+                // Crafting recipes: authored as SOs; synced to the TYPED Recipe table (see SyncAll).
+                new() { Name = "Recipes", Icon = "📜", SoType = typeof(RecipeDefinitionSO), Folder = "Recipes", ToContent = null },
+                // Currencies: authored as SOs; synced to the TYPED Currency table (see SyncAll).
+                new() { Name = "Currencies", Icon = "💰", SoType = typeof(CurrencyDefinitionSO), Folder = "Currencies", ToContent = null },
+                // Vendors: authored as SOs; synced to the TYPED Vendor table (see SyncAll).
+                new() { Name = "Vendors", Icon = "🏪", SoType = typeof(VendorDefinitionSO), Folder = "Vendors", ToContent = null },
             };
         }
 
@@ -191,7 +197,22 @@ namespace Arcane_Aegis.EditorTools
             foreach (var so in FindAllOf<ResourceNodeDefinitionSO>())
                 if (!string.IsNullOrWhiteSpace(so.id)) { Send(new I_Db_UpsertResourceNode { Node = ToResourceNodeRecord(so) }); nodes++; }
 
-            _status = $"Mirror ✓ — {items} item(ns) + {races.Length}r/{classes.Length}c/{genders.Length}g + {skills} skill(s) + {statuses} status(es) + {monsters} monstro(s) + {nodes} nó(s).";
+            // Recipes → the TYPED Recipe/RecipeIngredient tables in content.db.
+            int recipes = 0;
+            foreach (var so in FindAllOf<RecipeDefinitionSO>())
+                if (!string.IsNullOrWhiteSpace(so.id)) { Send(new I_Db_UpsertRecipe { Recipe = ToRecipeRecord(so) }); recipes++; }
+
+            // Currencies → the TYPED Currency table.
+            int currencies = 0;
+            foreach (var so in FindAllOf<CurrencyDefinitionSO>())
+                if (!string.IsNullOrWhiteSpace(so.id)) { Send(new I_Db_UpsertCurrency { Currency = ToCurrencyRecord(so) }); currencies++; }
+
+            // Vendors → the TYPED Vendor/VendorStock tables.
+            int vendors = 0;
+            foreach (var so in FindAllOf<VendorDefinitionSO>())
+                if (!string.IsNullOrWhiteSpace(so.id)) { Send(new I_Db_UpsertVendor { Vendor = ToVendorRecord(so) }); vendors++; }
+
+            _status = $"Mirror ✓ — {items} item(ns) + {races.Length}r/{classes.Length}c/{genders.Length}g + {skills} skill(s) + {statuses} status(es) + {monsters} monstro(s) + {nodes} nó(s) + {recipes} receita(s) + {currencies} moeda(s) + {vendors} vendedor(es).";
         }
 
         /// <summary>ItemDefinitionSO → the server's ItemTemplate. The SO uses the shared enums directly (no parsing);
@@ -214,7 +235,7 @@ namespace Arcane_Aegis.EditorTools
                 EnhanceMax = (byte)Mathf.Clamp(so.enhanceMax, 0, 255),
                 SocketsMax = (byte)Mathf.Clamp(so.socketsMax, 0, 255),
                 DurabilityMax = so.durabilityMax, Weight = so.weight,
-                Sellable = so.sellable, Tradeable = so.tradeable, NpcPrice = so.npcPrice,
+                Sellable = so.sellable, Tradeable = so.tradeable, NpcPrice = so.npcPrice, PriceCurrency = so.priceCurrency ?? "",
                 StackMax = (ushort)Mathf.Clamp(so.stackMax, 1, ushort.MaxValue),
             };
             if (so.statsBase != null) foreach (var s in so.statsBase) if (s.statId != StatId.None) t.StatsBase[s.statId.ToString()] = s.value;
@@ -277,11 +298,45 @@ namespace Arcane_Aegis.EditorTools
             return new ResourceNodeRecord
             {
                 Id = so.id, Name = so.displayName ?? "",
-                Profession = (byte)so.profession, RequiredTool = so.requiredTool ?? "",
+                Profession = (byte)so.profession, RequiredLevel = (ushort)Mathf.Max(1, so.requiredLevel), RequiredTool = so.requiredTool ?? "",
                 GatherSeconds = so.gatherSeconds, Charges = Mathf.Max(1, so.charges), RespawnSeconds = so.respawnSeconds,
                 XpReward = (uint)Mathf.Max(0, so.xpReward),
                 Yields = yields.ToArray(),
             };
+        }
+
+        /// <summary>RecipeDefinitionSO → the server's RecipeRecord (output + ingredients emit their template ids).</summary>
+        private static RecipeRecord ToRecipeRecord(RecipeDefinitionSO so)
+        {
+            var ings = new System.Collections.Generic.List<RecipeRecord.Ingredient>();
+            if (so.ingredients != null)
+                foreach (var ing in so.ingredients)
+                    if (ing.item != null && !string.IsNullOrWhiteSpace(ing.item.id) && ing.qty > 0)
+                        ings.Add(new RecipeRecord.Ingredient { ItemId = ing.item.id, Qty = ing.qty });
+            return new RecipeRecord
+            {
+                Id = so.id, Name = so.displayName ?? "",
+                Profession = (byte)so.profession, RequiredLevel = (ushort)Mathf.Max(1, so.requiredLevel),
+                CraftSeconds = so.craftSeconds, XpReward = (uint)Mathf.Max(0, so.xpReward),
+                OutputItemId = so.output != null ? so.output.id : "", OutputQty = Mathf.Max(1, so.outputQty),
+                Ingredients = ings.ToArray(),
+            };
+        }
+
+        /// <summary>CurrencyDefinitionSO → CurrencyRecord (icon emits its sprite name as the client asset id).</summary>
+        private static CurrencyRecord ToCurrencyRecord(CurrencyDefinitionSO so) => new()
+        {
+            Id = so.id, Name = so.displayName ?? "", Icon = so.icon != null ? so.icon.name : "", SortOrder = so.sortOrder,
+        };
+
+        /// <summary>VendorDefinitionSO → VendorRecord (stock emits each item's template id).</summary>
+        private static VendorRecord ToVendorRecord(VendorDefinitionSO so)
+        {
+            var stock = new System.Collections.Generic.List<string>();
+            if (so.stock != null)
+                foreach (var it in so.stock)
+                    if (it != null && !string.IsNullOrWhiteSpace(it.id)) stock.Add(it.id);
+            return new VendorRecord { Id = so.id, Name = so.displayName ?? "", StockItemIds = stock.ToArray() };
         }
 
         /// <summary>StatusDefinitionSO → the server's StatusRecord.</summary>
@@ -377,6 +432,9 @@ namespace Arcane_Aegis.EditorTools
             lib.statuses = new List<StatusDefinitionSO>(FindAllOf<StatusDefinitionSO>());
             lib.monsters = new List<MonsterDefinitionSO>(FindAllOf<MonsterDefinitionSO>());
             lib.resourceNodes = new List<ResourceNodeDefinitionSO>(FindAllOf<ResourceNodeDefinitionSO>());
+            lib.recipes = new List<RecipeDefinitionSO>(FindAllOf<RecipeDefinitionSO>());
+            lib.currencies = new List<CurrencyDefinitionSO>(FindAllOf<CurrencyDefinitionSO>());
+            lib.vendors = new List<VendorDefinitionSO>(FindAllOf<VendorDefinitionSO>());
             EditorUtility.SetDirty(lib);
             AssetDatabase.SaveAssets();
             _status = $"ContentLibrary: {lib.classes.Count} classes, {lib.races.Count} raças, {lib.genders.Count} gêneros, {lib.templates.Count} templates, {lib.items.Count} itens, {lib.skills.Count} skills, {lib.statuses.Count} status, {lib.monsters.Count} monstros.";
@@ -470,9 +528,10 @@ namespace Arcane_Aegis.EditorTools
             int n = 0;
             foreach (var mk in markers)
             {
-                // node takes priority over monster; skip empty markers.
+                // priority: vendor > node > monster; skip empty markers.
                 byte kind; string contentId;
-                if (mk.node != null && !string.IsNullOrWhiteSpace(mk.node.id)) { kind = 1; contentId = mk.node.id; }
+                if (mk.vendor != null && !string.IsNullOrWhiteSpace(mk.vendor.id)) { kind = 2; contentId = mk.vendor.id; }
+                else if (mk.node != null && !string.IsNullOrWhiteSpace(mk.node.id)) { kind = 1; contentId = mk.node.id; }
                 else if (mk.monster != null && !string.IsNullOrWhiteSpace(mk.monster.id)) { kind = 0; contentId = mk.monster.id; }
                 else continue;
                 var pos = mk.transform.position;

@@ -1,0 +1,21 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 743bc3346108fc543ac10baa945eb415, type: 3}
+  m_Name: NPC
+  m_EditorClassIdentifier: Assembly-CSharp::Arcane_Aegis.Content.VendorDefinitionSO
+  id: npc
+  displayName: NPC
+  stock:
+  - {fileID: 11400000, guid: a096f8a7c04cf704cbaac2ec7bfa8c3c, type: 2}
+  - {fileID: 11400000, guid: 1445cb1f9f596524fbe5107dc34a4858, type: 2}
+  model3D: {fileID: 890278490350523737, guid: 374776afb0380ac4d82a428a0046efd6, type: 3}
+  description: 

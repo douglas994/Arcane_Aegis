@@ -28,6 +28,11 @@ namespace Arcane_Aegis.Network.Handlers
             NoticeCode.NeedWeapon          => "Você precisa da arma certa equipada.",
             NoticeCode.ClassCannotCast     => "Sua classe não conhece essa skill.",
             NoticeCode.DiedDroppedItem     => "Você perdeu um item ao morrer!",
+            NoticeCode.TooFar              => "Muito longe.",
+            NoticeCode.ProfessionTooLow    => "Nível de profissão insuficiente.",
+            NoticeCode.NotEnoughCurrency   => "Moeda insuficiente.",
+            NoticeCode.VendorNoBuy         => "O vendedor não vende isso.",
+            NoticeCode.ItemNotSellable     => "Item não pode ser vendido.",
             _ => "",
         };
     }

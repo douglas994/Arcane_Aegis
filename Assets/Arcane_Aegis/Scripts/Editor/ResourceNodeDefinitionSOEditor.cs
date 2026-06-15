@@ -21,6 +21,7 @@ namespace Arcane_Aegis.EditorTools
 
             Section("Identidade");
             P("id", "Id"); P("displayName", "Nome"); P("profession", "Profissão");
+            P("requiredLevel", "Nível mín. da profissão");
 
             Section("Coleta");
             DrawToolDropdown(serializedObject.FindProperty("requiredTool"));

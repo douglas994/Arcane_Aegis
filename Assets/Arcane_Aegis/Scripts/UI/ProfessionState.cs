@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using UnityEngine;
 
@@ -11,13 +12,20 @@ namespace Arcane_Aegis.UI
 
         private static readonly Dictionary<byte, Entry> _byProf = new();
 
-        public static void Set(byte prof, ushort level, uint xp, uint xpToNext) => _byProf[prof] = new Entry { Level = level, Xp = xp, XpToNext = xpToNext };
+        /// <summary>Raised whenever a profession's mastery changes (so the HUD panel refreshes live).</summary>
+        public static event Action OnChanged;
+
+        public static void Set(byte prof, ushort level, uint xp, uint xpToNext)
+        {
+            _byProf[prof] = new Entry { Level = level, Xp = xp, XpToNext = xpToNext };
+            OnChanged?.Invoke();
+        }
         public static bool TryGet(byte prof, out Entry e) => _byProf.TryGetValue(prof, out e);
         public static float Fraction(byte prof) => _byProf.TryGetValue(prof, out var e) && e.XpToNext > 0 ? Mathf.Clamp01((float)e.Xp / e.XpToNext) : 0f;
 
         public static string Name(byte prof) => prof switch
         {
-            0 => "Lenhador", 1 => "Minerador", 2 => "Herborista", 3 => "Esfolador", 4 => "Pescador", 5 => "Fazendeiro", _ => "Profissão",
+            0 => "Lenhador", 1 => "Minerador", 2 => "Herborista", 3 => "Esfolador", 4 => "Pescador", 5 => "Fazendeiro", 6 => "Carpinteiro", _ => "Profissão",
         };
     }
 }

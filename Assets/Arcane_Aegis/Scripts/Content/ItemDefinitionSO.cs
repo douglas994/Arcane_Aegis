@@ -62,6 +62,7 @@ namespace Arcane_Aegis.Content
         public bool sellable = true;
         public bool tradeable = true;
         public int npcPrice;
+        [Tooltip("Id da moeda do preço (ex.: 'gold'). Vazio = sem preço (não compra/vende).")] public string priceCurrency = "gold";
         public int stackMax = 1;
 
         [Header("Client art — NOT synced")]

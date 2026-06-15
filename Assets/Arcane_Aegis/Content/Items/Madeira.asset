@@ -33,7 +33,8 @@ MonoBehaviour:
   weight: 0
   sellable: 1
   tradeable: 1
-  npcPrice: 1
+  npcPrice: 20
+  priceCurrency: gold
   stackMax: 99
   icon: {fileID: 1348512535, guid: 39601f2209aa2204b949b9f60886246d, type: 3}
   description: 

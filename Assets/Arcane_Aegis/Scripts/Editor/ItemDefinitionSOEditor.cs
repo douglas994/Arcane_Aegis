@@ -73,6 +73,7 @@ namespace Arcane_Aegis.EditorTools
             {
                 if (!equippable) P("stackMax");
                 P("weight"); P("sellable"); P("tradeable"); P("npcPrice");
+                CurrencyPopup("priceCurrency");
             }
 
             serializedObject.ApplyModifiedProperties();
@@ -82,6 +83,37 @@ namespace Arcane_Aegis.EditorTools
         {
             var p = serializedObject.FindProperty(prop);
             if (p != null) EditorGUILayout.PropertyField(p, true);
+        }
+
+        /// <summary>Draws the price-currency as a DROPDOWN of the currency ids you've created (CurrencyDefinitionSO assets),
+        /// instead of a free-text field — pick from the list, no typos. Falls back to a text field if none exist yet.</summary>
+        private void CurrencyPopup(string prop)
+        {
+            var p = serializedObject.FindProperty(prop);
+            if (p == null) return;
+
+            var ids = new List<string>();
+            foreach (var guid in AssetDatabase.FindAssets("t:CurrencyDefinitionSO"))
+            {
+                var so = AssetDatabase.LoadAssetAtPath<CurrencyDefinitionSO>(AssetDatabase.GUIDToAssetPath(guid));
+                if (so != null && !string.IsNullOrWhiteSpace(so.id) && !ids.Contains(so.id)) ids.Add(so.id);
+            }
+            ids.Sort();
+
+            if (ids.Count == 0)
+            {
+                EditorGUILayout.PropertyField(p, new GUIContent("Moeda do preço"));
+                EditorGUILayout.HelpBox("Nenhuma moeda criada ainda (Assets ▸ Create ▸ ArcaneMMO ▸ Currency). Usando texto livre.", MessageType.Info);
+                return;
+            }
+
+            string cur = p.stringValue ?? "";
+            if (!string.IsNullOrEmpty(cur) && !ids.Contains(cur)) ids.Insert(0, cur); // keep an unknown/old id visible
+            int idx = ids.IndexOf(cur);
+            if (idx < 0) idx = ids.IndexOf("gold"); // sensible default
+            if (idx < 0) idx = 0;
+            int sel = EditorGUILayout.Popup("Moeda do preço", idx, ids.ToArray());
+            if (sel != idx || cur != ids[sel]) p.stringValue = ids[sel];
         }
 
         /// <summary>A collapsible section header (state remembered per title). Returns whether the section is open.</summary>
