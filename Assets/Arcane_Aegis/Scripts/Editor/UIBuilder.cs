@@ -40,6 +40,9 @@ namespace Arcane_Aegis.EditorTools
             var sellHead = Label(body, "SellHeader", "Vender", 16, TextAlignmentOptions.Left, Accent); Band(sellHead.rectTransform, 282, 22);
             var sellContent = ScrollList(body, "SellScroll", 308, 200);
             var close = Button(body, "CloseButton", "Fechar", new Vector2(120, 34)); Bottom(close.GetComponent<RectTransform>(), 12);
+            close.GetComponent<RectTransform>().anchoredPosition = new Vector2(66, 12);   // right of center
+            var repair = Button(body, "RepairButton", "Consertar", new Vector2(120, 34)); Bottom(repair.GetComponent<RectTransform>(), 12);
+            repair.GetComponent<RectTransform>().anchoredPosition = new Vector2(-66, 12);  // left of center
 
             var rowTemplate = ShopRowTemplate(holder.transform);
 
@@ -53,6 +56,7 @@ namespace Arcane_Aegis.EditorTools
             so.ApplyModifiedProperties();
 
             AddClick(close, shop, nameof(ShopPanel.Close));
+            AddClick(repair, shop, nameof(ShopPanel.RepairAll));
             EnsureController<ShopController>("ShopController");
             Done(holder, "Shop Panel (E perto do vendedor abre)");
         }

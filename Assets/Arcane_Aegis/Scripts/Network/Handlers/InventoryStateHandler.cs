@@ -16,7 +16,6 @@ namespace Arcane_Aegis.Network.Handlers
             var p = new S2C_InventoryState();
             p.Deserialize(ref reader);
             if (InventoryStore.Instance != null) InventoryStore.Instance.SetItems(p.Items);
-            Debug.Log($"[Inventory] received {p.Items?.Length ?? 0} item(s)");
         }
     }
 }

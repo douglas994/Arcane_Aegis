@@ -18,7 +18,7 @@ MonoBehaviour:
   category: swords
   slot: 1
   twoHanded: 0
-  rarity: 0
+  rarity: 2
   element: 1
   levelReq: 1
   classReq: warrior
@@ -36,7 +36,7 @@ MonoBehaviour:
   - statId: 11
     min: 1
     max: 3
-  maxRolls: 2
+  maxRolls: 3
   effects: []
   tierMax: 5
   enhanceMax: 12

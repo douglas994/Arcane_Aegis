@@ -33,6 +33,8 @@ namespace Arcane_Aegis.Network.Handlers
             NoticeCode.NotEnoughCurrency   => "Moeda insuficiente.",
             NoticeCode.VendorNoBuy         => "O vendedor não vende isso.",
             NoticeCode.ItemNotSellable     => "Item não pode ser vendido.",
+            NoticeCode.GearBroke           => "Um equipamento quebrou! Conserte no vendedor.",
+            NoticeCode.NothingToRepair     => "Nada para consertar.",
             _ => "",
         };
     }

@@ -51,6 +51,9 @@ namespace Arcane_Aegis.UI
         public void Close() { if (panel != null) panel.SetActive(false); _vendor = null; }
         public bool IsOpen => panel != null && panel.activeSelf;
 
+        /// <summary>Repairs ALL damaged gear at the vendor (server charges gold + restores). Wire to a "Consertar" button.</summary>
+        public void RepairAll() { if (NetClient.Instance != null) NetClient.Instance.SendVendorRepair(); }
+
         private void RebuildBuy()
         {
             Clear(_buyRows);

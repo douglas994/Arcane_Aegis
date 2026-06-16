@@ -174,6 +174,13 @@ namespace Arcane_Aegis.Network
             Send(new C2S_VendorSell { InstanceId = instanceId, Qty = qty }, DeliveryMethod.ReliableOrdered);
         }
 
+        /// <summary>Asks the server to repair all damaged gear at a nearby vendor (server charges gold + restores durability).</summary>
+        public void SendVendorRepair()
+        {
+            if (!CanSend) return;
+            Send(new C2S_VendorRepair(), DeliveryMethod.ReliableOrdered);
+        }
+
         /// <summary>Asks the server to move an item to a (container, slot): equip / unequip / reorder. Server validates;
         /// it replies with a fresh S2C_InventoryState (+ vitals if the gear changed the stats).</summary>
         public void SendMoveItem(uint instanceId, byte toContainer, ushort toSlot)

@@ -54,7 +54,6 @@ namespace Arcane_Aegis.Entities
             view.Teleport(new Vector3(data.Position.X, data.Position.Y, data.Position.Z), data.Yaw);
 
             _views[data.EntityId] = view;
-            Debug.Log($"[Entities] spawn #{data.EntityId} ({data.Name}) [{data.Type}]");
         }
 
         /// <summary>Spawns OUR own player at the SERVER-given spawn point (NetClient calls this on login).</summary>
@@ -87,7 +86,6 @@ namespace Arcane_Aegis.Entities
             if (Local != null && Local.Id == id) Local = null;
             Destroy(view.gameObject);
             _views.Remove(id);
-            Debug.Log($"[Entities] despawn #{id}");
         }
 
         /// <summary>Zone change (border handoff): re-home OUR player on the new continent — drop the old continent's

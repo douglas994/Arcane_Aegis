@@ -34,7 +34,7 @@ MonoBehaviour:
   xpReward: 50
   loot:
   - item: {fileID: 11400000, guid: 1445cb1f9f596524fbe5107dc34a4858, type: 2}
-    chancePct: 17
+    chancePct: 100
     min: 1
     max: 2
   icon: {fileID: 21300000, guid: 6054318fc678eef4e97655493b73c580, type: 3}
