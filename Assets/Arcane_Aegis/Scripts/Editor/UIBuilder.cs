@@ -88,47 +88,139 @@ namespace Arcane_Aegis.EditorTools
         {
             var canvas = GetOrCreateCanvas();
             var holder = Holder(canvas.transform, "ProfessionPanel");
-            var window = WindowVisual(holder.transform, new Vector2(360, 220), out var body);
+            var window = WindowVisual(holder.transform, new Vector2(380, 320), out var body);
             var panel = window.AddComponent<ProfessionPanel>();
             var title = Label(body, "Title", "Profissões", 20, TextAlignmentOptions.Center); Top(title.rectTransform, 32);
 
-            var row = ProfessionRow(body, out var nameL, out var levelL, out var fill, out var xpL); Band(RT(row), 48, 44);
+            var list = ScrollList(body, "ProfessionScroll", 44, 250);
+            var rowTemplate = ProfessionRowTemplate(holder.transform);
 
             var so = new SerializedObject(panel);
-            var rows = so.FindProperty("rows"); rows.arraySize = 1;
-            var e = rows.GetArrayElementAtIndex(0);
-            e.FindPropertyRelative("profession").enumValueIndex = 0; // Woodcutting
-            e.FindPropertyRelative("nameLabel").objectReferenceValue = nameL;
-            e.FindPropertyRelative("levelLabel").objectReferenceValue = levelL;
-            e.FindPropertyRelative("fill").objectReferenceValue = fill;
-            e.FindPropertyRelative("xpLabel").objectReferenceValue = xpL;
+            Set(so, "rowPrefab", rowTemplate);
+            Set(so, "container", list);
             so.ApplyModifiedProperties();
 
             AddToggle(holder, window, Key.P);
-            Done(holder, "Profession Panel (tecla P abre)");
+            Done(holder, "Profession Panel (tecla P abre) — auto-lista as 7 profissões");
         }
 
         [MenuItem("ArcaneMMO/UI/Currency HUD")]
         public static void BuildCurrencyHud()
         {
             var canvas = GetOrCreateCanvas();
-            var root = Panel(canvas.transform, "CurrencyHud", new Vector2(220, 40), BgSoft);
-            var rt = RT(root); rt.anchorMin = rt.anchorMax = new Vector2(1, 1); rt.pivot = new Vector2(1, 1); rt.anchoredPosition = new Vector2(-20, -20);
+            var root = New("CurrencyHud", canvas.transform);
+            var rt = RT(root); rt.anchorMin = rt.anchorMax = new Vector2(1, 1); rt.pivot = new Vector2(1, 1); rt.anchoredPosition = new Vector2(-20, -20); rt.sizeDelta = new Vector2(220, 40);
             var hud = root.AddComponent<CurrencyHud>();
 
-            var icon = Img(root.transform, "GoldIcon", new Vector2(24, 24));
-            var irt = RT(icon); irt.anchorMin = irt.anchorMax = new Vector2(0, 0.5f); irt.pivot = new Vector2(0, 0.5f); irt.anchoredPosition = new Vector2(10, 0);
-            var amount = Label(root, "GoldAmount", "0", 18, TextAlignmentOptions.Right);
-            var art = amount.rectTransform; art.anchorMin = new Vector2(1, 0.5f); art.anchorMax = new Vector2(1, 0.5f); art.pivot = new Vector2(1, 0.5f); art.anchoredPosition = new Vector2(-10, 0); art.sizeDelta = new Vector2(140, 30);
+            // Vertical container the currency rows stack in (grows with content). The row template is a SIBLING of this
+            // (not a child) — CurrencyHud.Build() clears the container's children, which would otherwise destroy it.
+            var rowsGo = New("Rows", root.transform); var rrt = RT(rowsGo);
+            rrt.anchorMin = new Vector2(0, 1); rrt.anchorMax = new Vector2(1, 1); rrt.pivot = new Vector2(0.5f, 1); rrt.anchoredPosition = Vector2.zero; rrt.sizeDelta = Vector2.zero;
+            var vlg = rowsGo.AddComponent<VerticalLayoutGroup>(); vlg.childControlWidth = true; vlg.childForceExpandWidth = true; vlg.childControlHeight = true; vlg.childForceExpandHeight = false; vlg.spacing = 2;
+            var csf = rowsGo.AddComponent<ContentSizeFitter>(); csf.verticalFit = ContentSizeFitter.FitMode.PreferredSize;
+
+            var rowTemplate = CurrencyRowTemplate(root.transform);
 
             var so = new SerializedObject(hud);
-            var rows = so.FindProperty("rows"); rows.arraySize = 1;
-            var e = rows.GetArrayElementAtIndex(0);
-            e.FindPropertyRelative("currencyId").stringValue = "gold";
-            e.FindPropertyRelative("amountLabel").objectReferenceValue = amount;
-            e.FindPropertyRelative("icon").objectReferenceValue = icon.GetComponent<Image>();
+            Set(so, "library", FindLibrary());
+            Set(so, "rowPrefab", rowTemplate);
+            Set(so, "container", rrt);
             so.ApplyModifiedProperties();
-            Done(root, "Currency HUD (row: gold)");
+            Done(root, "Currency HUD — auto-lista as moedas do ContentLibrary");
+        }
+
+        [MenuItem("ArcaneMMO/UI/Party Panel")]
+        public static void BuildParty()
+        {
+            var canvas = GetOrCreateCanvas();
+            var holder = Holder(canvas.transform, "PartyPanel");
+            var window = WindowVisual(holder.transform, new Vector2(360, 420), out var body);
+            var panel = window.AddComponent<PartyPanel>();
+            var title = Label(body, "Title", "Grupo", 20, TextAlignmentOptions.Center); Top(title.rectTransform, 32);
+
+            var list = ScrollList(body, "RosterScroll", 44, 244);
+            var rosterRoot = list.parent.parent.gameObject; // the ScrollRect view → hidden when you're solo
+
+            var inviteField = InputField(body, "InviteName", "Nome do jogador…");
+            var ifr = RT(inviteField.gameObject); ifr.anchorMin = new Vector2(0, 0); ifr.anchorMax = new Vector2(1, 0); ifr.pivot = new Vector2(0.5f, 0); ifr.anchoredPosition = new Vector2(-60, 92); ifr.sizeDelta = new Vector2(-128, 30);
+            var inviteBtn = Button(body, "InviteButton", "Convidar", new Vector2(112, 30)); var ibr = RT(inviteBtn); ibr.anchorMin = new Vector2(1, 0); ibr.anchorMax = new Vector2(1, 0); ibr.pivot = new Vector2(1, 0); ibr.anchoredPosition = new Vector2(0, 92);
+
+            var leaveBtn = Button(body, "LeaveButton", "Sair", new Vector2(112, 32)); var lbr = RT(leaveBtn); lbr.anchorMin = lbr.anchorMax = new Vector2(0, 0); lbr.pivot = new Vector2(0, 0); lbr.anchoredPosition = new Vector2(0, 12);
+            var disbandBtn = Button(body, "DisbandButton", "Desfazer", new Vector2(112, 32)); var dbr = RT(disbandBtn); dbr.anchorMin = dbr.anchorMax = new Vector2(1, 0); dbr.pivot = new Vector2(1, 0); dbr.anchoredPosition = new Vector2(0, 12);
+
+            var rowTemplate = PartyMemberRowTemplate(holder.transform);
+
+            var so = new SerializedObject(panel);
+            Set(so, "rosterRoot", rosterRoot);
+            Set(so, "rowPrefab", rowTemplate);
+            Set(so, "container", list);
+            Set(so, "leaveButton", leaveBtn.GetComponent<Button>());
+            Set(so, "disbandButton", disbandBtn.GetComponent<Button>());
+            Set(so, "inviteName", inviteField);
+            Set(so, "inviteButton", inviteBtn.GetComponent<Button>());
+            so.ApplyModifiedProperties();
+
+            AddToggle(holder, window, Key.O);
+            Done(holder, "Party Panel (tecla O abre) — convidar por nome, sair/expulsar/desfazer");
+        }
+
+        [MenuItem("ArcaneMMO/UI/Party Invite Prompt")]
+        public static void BuildPartyInvite()
+        {
+            var canvas = GetOrCreateCanvas();
+            var holder = Holder(canvas.transform, "PartyInvitePrompt");
+            var prompt = holder.AddComponent<PartyInvitePrompt>();
+
+            var window = Panel(holder.transform, "Window", new Vector2(340, 150), Bg);
+            var rt = RT(window); rt.anchorMin = rt.anchorMax = new Vector2(0.5f, 0.5f); rt.pivot = new Vector2(0.5f, 0.5f); rt.anchoredPosition = new Vector2(0, 160);
+
+            var msg = Label(window, "Message", "Fulano convidou você para um grupo.", 15, TextAlignmentOptions.Center);
+            var mr = msg.rectTransform; mr.anchorMin = new Vector2(0, 1); mr.anchorMax = new Vector2(1, 1); mr.pivot = new Vector2(0.5f, 1); mr.anchoredPosition = new Vector2(0, -16); mr.sizeDelta = new Vector2(-20, 60);
+
+            var accept = Button(window.transform, "Accept", "Aceitar", new Vector2(120, 34)); var ar = RT(accept); ar.anchorMin = ar.anchorMax = new Vector2(0, 0); ar.pivot = new Vector2(0, 0); ar.anchoredPosition = new Vector2(16, 16);
+            var decline = Button(window.transform, "Decline", "Recusar", new Vector2(120, 34)); var dr = RT(decline); dr.anchorMin = dr.anchorMax = new Vector2(1, 0); dr.pivot = new Vector2(1, 0); dr.anchoredPosition = new Vector2(-16, 16);
+
+            var so = new SerializedObject(prompt);
+            Set(so, "panel", window);
+            Set(so, "message", msg);
+            Set(so, "acceptButton", accept.GetComponent<Button>());
+            Set(so, "declineButton", decline.GetComponent<Button>());
+            so.ApplyModifiedProperties();
+            Done(holder, "Party Invite Prompt (aparece ao receber um convite)");
+        }
+
+        [MenuItem("ArcaneMMO/UI/Chat Panel")]
+        public static void BuildChat()
+        {
+            var canvas = GetOrCreateCanvas();
+            var holder = Holder(canvas.transform, "ChatPanel");
+            var chat = holder.AddComponent<ChatPanel>();
+
+            var win = Panel(holder.transform, "Window", new Vector2(440, 220), Bg);
+            var wrt = RT(win); wrt.anchorMin = wrt.anchorMax = new Vector2(0, 0); wrt.pivot = new Vector2(0, 0); wrt.anchoredPosition = new Vector2(16, 16);
+            var body = New("Body", win.transform); var brt = RT(body); Stretch(brt); brt.offsetMin = new Vector2(8, 8); brt.offsetMax = new Vector2(-8, -8);
+
+            // Scrollable log: a single growing TMP_Text (vertical ContentSizeFitter) inside a masked viewport.
+            var sv = New("LogScroll", body.transform); var svrt = RT(sv); svrt.anchorMin = new Vector2(0, 0); svrt.anchorMax = new Vector2(1, 1); svrt.offsetMin = new Vector2(0, 38); svrt.offsetMax = new Vector2(0, 0);
+            sv.AddComponent<Image>().color = BgSoft;
+            var sr = sv.AddComponent<ScrollRect>(); sr.horizontal = false;
+            var viewport = New("Viewport", sv.transform); var vrt = RT(viewport); Stretch(vrt); viewport.AddComponent<RectMask2D>();
+            var content = New("Content", viewport.transform); var crt = RT(content); crt.anchorMin = new Vector2(0, 1); crt.anchorMax = new Vector2(1, 1); crt.pivot = new Vector2(0.5f, 1); crt.anchoredPosition = Vector2.zero; crt.sizeDelta = Vector2.zero;
+            var logText = content.AddComponent<TextMeshProUGUI>(); logText.fontSize = 13; logText.alignment = TextAlignmentOptions.BottomLeft; logText.color = Color.white; logText.richText = true;
+            var csf = content.AddComponent<ContentSizeFitter>(); csf.verticalFit = ContentSizeFitter.FitMode.PreferredSize;
+            sr.viewport = vrt; sr.content = crt;
+
+            var input = InputField(brt, "ChatInput", "Mensagem do grupo…");
+            var ir = RT(input.gameObject); ir.anchorMin = new Vector2(0, 0); ir.anchorMax = new Vector2(1, 0); ir.pivot = new Vector2(0, 0); ir.anchoredPosition = new Vector2(0, 0); ir.sizeDelta = new Vector2(-84, 30);
+            var send = Button(body.transform, "Send", "Enviar", new Vector2(76, 30)); var sndr = RT(send); sndr.anchorMin = new Vector2(1, 0); sndr.anchorMax = new Vector2(1, 0); sndr.pivot = new Vector2(1, 0); sndr.anchoredPosition = new Vector2(0, 0);
+
+            var so = new SerializedObject(chat);
+            Set(so, "logText", logText);
+            Set(so, "scroll", sr);
+            Set(so, "input", input);
+            Set(so, "sendButton", send.GetComponent<Button>());
+            so.ApplyModifiedProperties();
+            Done(holder, "Chat Panel (canto inf. esq.) — Enter ou Enviar manda no grupo");
         }
 
         [MenuItem("ArcaneMMO/UI/Gather + Craft Bars")]
@@ -238,15 +330,81 @@ namespace Arcane_Aegis.EditorTools
             return row;
         }
 
-        private static GameObject ProfessionRow(RectTransform body, out TMP_Text nameL, out TMP_Text levelL, out Image fill, out TMP_Text xpL)
+        // Profession row prefab (name + level on top, XP bar below) carrying a ProfessionRow component. The panel
+        // instantiates one per profession; this is hidden (it's the template).
+        private static GameObject ProfessionRowTemplate(Transform parent)
         {
-            var row = New("Row_Lenhador", body); var rt = RT(row); rt.anchorMin = new Vector2(0, 1); rt.anchorMax = new Vector2(1, 1); rt.pivot = new Vector2(0.5f, 1); rt.sizeDelta = new Vector2(0, 44);
-            nameL = Label(row, "Name", "Lenhador", 15, TextAlignmentOptions.Left); var nr = nameL.rectTransform; nr.anchorMin = new Vector2(0, 1); nr.anchorMax = new Vector2(0, 1); nr.pivot = new Vector2(0, 1); nr.anchoredPosition = new Vector2(6, -2); nr.sizeDelta = new Vector2(160, 20);
-            levelL = Label(row, "Level", "Nv 1", 15, TextAlignmentOptions.Right); var lr = levelL.rectTransform; lr.anchorMin = new Vector2(1, 1); lr.anchorMax = new Vector2(1, 1); lr.pivot = new Vector2(1, 1); lr.anchoredPosition = new Vector2(-6, -2); lr.sizeDelta = new Vector2(80, 20);
+            var row = New("ProfessionRowTemplate", parent); RT(row).sizeDelta = new Vector2(0, 44);
+            row.AddComponent<Image>().color = BgSoft;
+            var le = row.AddComponent<LayoutElement>(); le.preferredHeight = 44; le.minHeight = 44;
+
+            var nameL = Label(row, "Name", "Profissão", 15, TextAlignmentOptions.Left); var nr = nameL.rectTransform; nr.anchorMin = new Vector2(0, 1); nr.anchorMax = new Vector2(0, 1); nr.pivot = new Vector2(0, 1); nr.anchoredPosition = new Vector2(6, -2); nr.sizeDelta = new Vector2(160, 20);
+            var levelL = Label(row, "Level", "Nv 1", 15, TextAlignmentOptions.Right); var lr = levelL.rectTransform; lr.anchorMin = new Vector2(1, 1); lr.anchorMax = new Vector2(1, 1); lr.pivot = new Vector2(1, 1); lr.anchoredPosition = new Vector2(-6, -2); lr.sizeDelta = new Vector2(80, 20);
             var bar = Img(row.transform, "BarBG", Vector2.zero); var brt = RT(bar); brt.anchorMin = new Vector2(0, 0); brt.anchorMax = new Vector2(1, 0); brt.pivot = new Vector2(0.5f, 0); brt.anchoredPosition = new Vector2(0, 4); brt.sizeDelta = new Vector2(-12, 14); bar.GetComponent<Image>().color = new Color(0, 0, 0, 0.4f);
-            var fillGo = Img(bar.transform, "Fill", Vector2.zero); Stretch(RT(fillGo)); fill = fillGo.GetComponent<Image>(); fill.color = Accent; fill.type = Image.Type.Filled; fill.fillMethod = Image.FillMethod.Horizontal; fill.fillAmount = 0f;
-            xpL = Label(bar, "Xp", "0/0", 11, TextAlignmentOptions.Center); Stretch(xpL.rectTransform);
+            var fillGo = Img(bar.transform, "Fill", Vector2.zero); Stretch(RT(fillGo)); var fill = fillGo.GetComponent<Image>(); fill.color = Accent; fill.type = Image.Type.Filled; fill.fillMethod = Image.FillMethod.Horizontal; fill.fillAmount = 0f;
+            var xpL = Label(bar, "Xp", "0/0", 11, TextAlignmentOptions.Center); Stretch(xpL.rectTransform);
+
+            var pr = row.AddComponent<ProfessionRow>();
+            var so = new SerializedObject(pr);
+            Set(so, "nameLabel", nameL); Set(so, "levelLabel", levelL); Set(so, "fill", fill); Set(so, "xpLabel", xpL);
+            so.ApplyModifiedProperties();
+            row.SetActive(false);
             return row;
+        }
+
+        // Currency row prefab (icon + name + amount) carrying a CurrencyRow component.
+        private static GameObject CurrencyRowTemplate(Transform parent)
+        {
+            var row = Row(parent, "CurrencyRowTemplate");
+            var icon = Img(row.transform, "Icon", new Vector2(22, 22)); Fixed(icon, 22);
+            var name = Label(row, "Name", "Moeda", 14, TextAlignmentOptions.Left); Flexible(name.gameObject);
+            var amount = Label(row, "Amount", "0", 14, TextAlignmentOptions.Right); Fixed(amount.gameObject, 90);
+
+            var cr = row.AddComponent<CurrencyRow>();
+            var so = new SerializedObject(cr);
+            Set(so, "nameLabel", name); Set(so, "amountLabel", amount); Set(so, "icon", icon.GetComponent<Image>());
+            so.ApplyModifiedProperties();
+            row.SetActive(false);
+            return row;
+        }
+
+        // Party member row prefab (leader marker + name + level + HP bar + kick) carrying a PartyMemberRow component.
+        private static GameObject PartyMemberRowTemplate(Transform parent)
+        {
+            var row = Row(parent, "PartyMemberRowTemplate");
+            var leader = Img(row.transform, "LeaderMarker", new Vector2(14, 14)); Fixed(leader, 14); leader.GetComponent<Image>().color = Accent;
+            var name = Label(row, "Name", "Membro", 14, TextAlignmentOptions.Left); Flexible(name.gameObject);
+            var level = Label(row, "Level", "Nv 1", 13, TextAlignmentOptions.Right); Fixed(level.gameObject, 52);
+            var barBg = Img(row.transform, "HpBarBG", new Vector2(80, 14)); Fixed(barBg, 80); barBg.GetComponent<Image>().color = new Color(0, 0, 0, 0.4f);
+            var fillGo = Img(barBg.transform, "Fill", Vector2.zero); Stretch(RT(fillGo)); var fill = fillGo.GetComponent<Image>(); fill.color = new Color(0.4f, 0.85f, 0.4f, 1f); fill.type = Image.Type.Filled; fill.fillMethod = Image.FillMethod.Horizontal; fill.fillAmount = 1f;
+            var kick = Button(row.transform, "Kick", "X", new Vector2(26, 26)); Fixed(kick, 26);
+
+            var pr = row.AddComponent<PartyMemberRow>();
+            var so = new SerializedObject(pr);
+            Set(so, "nameLabel", name); Set(so, "levelLabel", level); Set(so, "hpFill", fill);
+            Set(so, "leaderMarker", leader); Set(so, "kickButton", kick.GetComponent<Button>());
+            so.ApplyModifiedProperties();
+            row.SetActive(false);
+            return row;
+        }
+
+        // A single-line TMP input field (background + masked text area + placeholder), wired and ready.
+        private static TMP_InputField InputField(RectTransform parent, string name, string placeholder)
+        {
+            var go = New(name, parent); go.AddComponent<Image>().color = new Color(1f, 1f, 1f, 0.12f);
+            var input = go.AddComponent<TMP_InputField>();
+
+            var area = New("TextArea", go.transform); var art = RT(area); Stretch(art); art.offsetMin = new Vector2(8, 4); art.offsetMax = new Vector2(-8, -4);
+            area.AddComponent<RectMask2D>();
+
+            var ph = Label(area, "Placeholder", placeholder, 14, TextAlignmentOptions.Left, new Color(1f, 1f, 1f, 0.4f)); Stretch(ph.rectTransform);
+            var txt = Label(area, "Text", "", 14, TextAlignmentOptions.Left); Stretch(txt.rectTransform);
+
+            input.textViewport = art;
+            input.textComponent = txt;
+            input.placeholder = ph;
+            input.lineType = TMP_InputField.LineType.SingleLine;
+            return input;
         }
 
         // ── primitives ──

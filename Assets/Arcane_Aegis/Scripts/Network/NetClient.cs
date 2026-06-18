@@ -113,6 +113,11 @@ namespace Arcane_Aegis.Network
             router.Register(new CraftEndHandler());
             router.Register(new CurrencyHandler());
             router.Register(new ProfessionXpHandler());
+            router.Register(new PartyStateHandler());
+            router.Register(new PartyInviteHandler());
+            router.Register(new PartyNoticeHandler());
+            router.Register(new PartyVitalsHandler());
+            router.Register(new PartyChatHandler());
             return router;
         }
 
@@ -208,6 +213,50 @@ namespace Arcane_Aegis.Network
         {
             if (!CanSend) return;
             Send(new C2S_UseItem { InstanceId = instanceId }, DeliveryMethod.ReliableOrdered);
+        }
+
+        // ── party (routed by the Gateway to ArcaneSocial) ──
+
+        /// <summary>Invite a player BY NAME to your party (auto-creates one if you're not in a party). Server resolves the name.</summary>
+        public void SendPartyInvite(string targetName)
+        {
+            if (!CanSend || string.IsNullOrWhiteSpace(targetName)) return;
+            Send(new C2S_PartyInvite { TargetName = targetName.Trim() }, DeliveryMethod.ReliableOrdered);
+        }
+
+        /// <summary>Answer a pending party invite (accept = join).</summary>
+        public void SendPartyResponse(bool accept)
+        {
+            if (!CanSend) return;
+            Send(new C2S_PartyResponse { Accept = accept }, DeliveryMethod.ReliableOrdered);
+        }
+
+        /// <summary>Leave your current party.</summary>
+        public void SendPartyLeave()
+        {
+            if (!CanSend) return;
+            Send(new C2S_PartyLeave(), DeliveryMethod.ReliableOrdered);
+        }
+
+        /// <summary>Leader-only: remove a member from the party by character id.</summary>
+        public void SendPartyKick(uint targetCharacterId)
+        {
+            if (!CanSend) return;
+            Send(new C2S_PartyKick { TargetCharacterId = targetCharacterId }, DeliveryMethod.ReliableOrdered);
+        }
+
+        /// <summary>Leader-only: disband the whole party.</summary>
+        public void SendPartyDisband()
+        {
+            if (!CanSend) return;
+            Send(new C2S_PartyDisband(), DeliveryMethod.ReliableOrdered);
+        }
+
+        /// <summary>Send a message to the party chat channel.</summary>
+        public void SendPartyChat(string text)
+        {
+            if (!CanSend || string.IsNullOrWhiteSpace(text)) return;
+            Send(new C2S_PartyChat { Text = text.Trim() }, DeliveryMethod.ReliableOrdered);
         }
 
         private bool CanSend => _server != null && entities != null && entities.Local != null;

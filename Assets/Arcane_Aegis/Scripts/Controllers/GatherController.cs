@@ -2,6 +2,7 @@ using UnityEngine;
 using UnityEngine.InputSystem;
 using Arcane_Aegis.Entities;
 using Arcane_Aegis.Network;
+using Arcane_Aegis.UI;
 
 namespace Arcane_Aegis.Controllers
 {
@@ -23,7 +24,7 @@ namespace Arcane_Aegis.Controllers
             var kb = Keyboard.current;
             if (local == null || kb == null) return;
 
-            if (kb[gatherKey].wasPressedThisFrame)
+            if (kb[gatherKey].wasPressedThisFrame && !UiFocus.IsTyping)
             {
                 var node = _entities.NearestResourceNode(local.transform.position, range);
                 if (node != null && NetClient.Instance != null) NetClient.Instance.SendGather(node.Id);

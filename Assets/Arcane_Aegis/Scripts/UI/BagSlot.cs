@@ -3,6 +3,7 @@ using UnityEngine;
 using UnityEngine.UI;
 using UnityEngine.EventSystems;
 using TMPro;
+using ArcaneShared.Enums;
 
 namespace Arcane_Aegis.UI
 {
@@ -20,6 +21,8 @@ namespace Arcane_Aegis.UI
         [SerializeField] private TMP_Text quantity;
         [Tooltip("Optional: a frame/glow shown while this slot's item is picked (held by the cursor).")]
         [SerializeField] private GameObject pickedHighlight;
+        [Tooltip("Optional: a border Image tinted by the item's rarity (Common = white; hidden when the slot is empty).")]
+        [SerializeField] private Image rarityFrame;
 
         private Action _onClick;       // left click
         private Action _onAltClick;    // right click (split)
@@ -49,6 +52,14 @@ namespace Arcane_Aegis.UI
         public void SetPicked(bool on)
         {
             if (pickedHighlight != null) pickedHighlight.SetActive(on);
+        }
+
+        /// <summary>Tints the rarity border for this slot's item; pass null for an empty slot (border hidden).</summary>
+        public void SetRarity(ItemRarity? rarity)
+        {
+            if (rarityFrame == null) return;
+            rarityFrame.enabled = rarity.HasValue;
+            if (rarity.HasValue) rarityFrame.color = RarityColors.For(rarity.Value);
         }
 
         public void OnPointerClick(PointerEventData eventData)

@@ -3,6 +3,7 @@ using UnityEngine;
 using UnityEngine.InputSystem;
 using UnityEngine.EventSystems;
 using Arcane_Aegis.Network;
+using Arcane_Aegis.UI;
 using PlayerInput = Arcane_Aegis.Controllers.Inputs.PlayerInput; // disambiguate from UnityEngine.InputSystem.PlayerInput
 
 namespace Arcane_Aegis.Controllers.Combat
@@ -39,7 +40,7 @@ namespace Arcane_Aegis.Controllers.Combat
 
         private void Update()
         {
-            if (_net == null) return;
+            if (_net == null || UiFocus.IsTyping) return; // typing in chat → no casting
 
             // Left mouse (Attack) = basic ability — ignore clicks over the UI (a button handled them).
             if (input != null && input.ConsumeAttack() && !IsPointerOverUI()) TryCast(basicAbilityId);

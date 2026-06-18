@@ -87,12 +87,14 @@ namespace Arcane_Aegis.UI
                         on => HoverTooltip(on, captured, so),
                         qty);
                     slot.SetPicked(cursor != null && cursor.PickedInstanceId == id);
+                    slot.SetRarity(so != null ? so.rarity : ItemRarity.Common);
                 }
                 else
                 {
                     int idx = i;
                     slot.Bind(null, "", () => OnSlotClicked(idx, 0));
                     slot.SetPicked(false);
+                    slot.SetRarity(null);
                 }
             }
         }

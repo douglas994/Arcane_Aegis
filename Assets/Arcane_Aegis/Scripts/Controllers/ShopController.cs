@@ -23,7 +23,7 @@ namespace Arcane_Aegis.Controllers
             var kb = Keyboard.current;
             if (local == null || kb == null) return;
 
-            if (kb[interactKey].wasPressedThisFrame)
+            if (kb[interactKey].wasPressedThisFrame && !UiFocus.IsTyping)
             {
                 if (ShopPanel.Instance != null && ShopPanel.Instance.IsOpen) { ShopPanel.Instance.Close(); return; }
                 var vendor = _entities.NearestVendor(local.transform.position, range);

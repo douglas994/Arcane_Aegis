@@ -1,5 +1,6 @@
 using UnityEngine;
 using UnityEngine.InputSystem;
+using Arcane_Aegis.UI;
 
 namespace Arcane_Aegis.Controllers.Inputs
 {
@@ -46,10 +47,20 @@ namespace Arcane_Aegis.Controllers.Inputs
 
         private void Update()
         {
-            Move = _actions.Player.Move.ReadValue<Vector2>();
+            // Camera (mouse) stays live even while typing — it doesn't conflict with a text field.
             Look = _actions.Player.Look.ReadValue<Vector2>() * lookSensitivity;
             Zoom = _actions.UI.ScrollWheel.ReadValue<Vector2>().y / 120f; // 120 = one wheel notch
             RightClick = _actions.UI.RightClick.ReadValue<float>() > 0.5f;
+
+            // Typing in chat/an input → suppress movement/jump/attack so keystrokes don't drive the character.
+            if (UiFocus.IsTyping)
+            {
+                Move = Vector2.zero;
+                DashHeld = false;
+                return;
+            }
+
+            Move = _actions.Player.Move.ReadValue<Vector2>();
             DashHeld = _actions.Player.Dash.IsPressed();
 
             if (_actions.Player.Jump.WasPressedThisFrame()) _jumpLatched = true;

@@ -17,7 +17,7 @@ namespace Arcane_Aegis.UI
 
         private void Update()
         {
-            if (hotkey == Key.None) return;
+            if (hotkey == Key.None || UiFocus.IsTyping) return; // don't toggle panels while typing in a field
             var kb = Keyboard.current;
             if (kb != null && kb[hotkey].wasPressedThisFrame) Toggle();
         }
