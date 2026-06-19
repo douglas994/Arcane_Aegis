@@ -4,8 +4,10 @@ using Arcane_Aegis.Content;
 
 namespace Arcane_Aegis.EditorTools
 {
-    /// <summary>Inspector for a monster: grouped sections + a loot table (drag ItemDefinitionSO into each row, set the
-    /// chance % and quantity). Mirrors the other content inspectors.</summary>
+    /// <summary>Inspector for a monster. One SO covers monster / boss / sealed-boss — the Boss + Selado groups are
+    /// collapsible foldouts (auto-expanded when they already hold data) so authoring a plain monster stays clean. A
+    /// badge up top shows what this asset currently IS. The boss "types" are authored in different places: Elite + World
+    /// Boss on the SPAWNER; Selado here on the def.</summary>
     [CustomEditor(typeof(MonsterDefinitionSO))]
     public class MonsterDefinitionSOEditor : Editor
     {
@@ -16,8 +18,18 @@ namespace Arcane_Aegis.EditorTools
             serializedObject.Update();
             var so = (MonsterDefinitionSO)target;
 
-            EditorGUILayout.HelpBox($"{(string.IsNullOrEmpty(so.displayName) ? so.name : so.displayName)} · Lv{so.level} · {so.xpReward} XP · {so.loot.Count} loot", MessageType.None);
+            bool boss = so.isBoss || so.isSealed; // sealed implies boss
+            bool sealed_ = so.isSealed;
 
+            // ── type badge + the two toggles that reveal the extra fields ──
+            string kind = sealed_ ? "🔒 BOSS SELADO" : boss ? "👑 BOSS" : "Monstro normal";
+            EditorGUILayout.HelpBox($"{(string.IsNullOrEmpty(so.displayName) ? so.name : so.displayName)} · {kind} · Lv{so.level} · {so.xpReward} XP · {so.loot.Count} loot", MessageType.None);
+
+            Section("Tipo");
+            P("isBoss", "É Boss");
+            P("isSealed", "É Selado (implica Boss)");
+
+            // ── core (always shown) ──
             Section("Identidade");
             P("id", "Id"); P("displayName", "Nome"); P("level", "Nível");
             P("disposition", "Disposição"); P("kind", "Tipo");
@@ -41,10 +53,23 @@ namespace Arcane_Aegis.EditorTools
             Section("Hitbox de mira");
             P("hitboxRadius", "Raio (m)"); P("hitboxHeight", "Altura (m)");
 
-            Section("Boss (opcional — preencher torna o monstro um boss)");
-            EditorGUILayout.HelpBox("Um boss é um monstro com fases/enrage/anúncio. O arquétipo acima continua sendo o ESTILO de luta (melee/ranged/caster). Deixe vazio para um monstro normal.", MessageType.None);
-            P("enrageSeconds", "Enrage após (s)"); P("announceGlobal", "Anunciar na zona");
-            P("phases", "Fases (por % de vida)");
+            // ── boss (only when 'É Boss' / 'É Selado') ──
+            if (boss)
+            {
+                Section("Boss");
+                EditorGUILayout.HelpBox("ELITE e WORLD BOSS são configurados no SPAWNER (chance de elite / respawn longo). Aqui ficam fases/enrage/anúncio.", MessageType.None);
+                P("enrageSeconds", "Enrage após (s)"); P("announceGlobal", "Anunciar na zona");
+                P("phases", "Fases (por % de vida)");
+            }
+
+            // ── sealed boss (only when 'É Selado') ──
+            if (sealed_)
+            {
+                Section("Selado");
+                EditorGUILayout.HelpBox("Nasce como um SELO no mundo; o jogador quebra com nível + itens-chave (consumidos). Põe num spawner apontando pra este boss + um SealController na cena (tecla G).", MessageType.None);
+                P("sealMinLevel", "Nível mínimo"); P("sealCooldown", "Re-sela após (s)");
+                P("sealReqs", "Itens-chave"); P("sealModel3D", "Modelo do selo");
+            }
 
             Section("Loot");
             EditorGUILayout.HelpBox("Cada linha: um item + chance (%) + quantidade. A sorte (LUK) do matador dá um bônus pequeno na chance.", MessageType.None);

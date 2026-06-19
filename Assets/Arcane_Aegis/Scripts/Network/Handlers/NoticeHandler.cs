@@ -35,6 +35,9 @@ namespace Arcane_Aegis.Network.Handlers
             NoticeCode.ItemNotSellable     => "Item não pode ser vendido.",
             NoticeCode.GearBroke           => "Um equipamento quebrou! Conserte no vendedor.",
             NoticeCode.NothingToRepair     => "Nada para consertar.",
+            NoticeCode.SealLevelTooLow     => "Nível insuficiente para quebrar o selo.",
+            NoticeCode.SealMissingItems    => "Faltam os itens-chave para quebrar o selo.",
+            NoticeCode.SealBroken          => "O selo se quebra... o chefe desperta!",
             _ => "",
         };
     }

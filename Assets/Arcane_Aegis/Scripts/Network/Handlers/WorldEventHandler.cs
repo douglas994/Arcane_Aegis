@@ -17,7 +17,12 @@ namespace Arcane_Aegis.Network.Handlers
             if (Toast.Instance == null) return;
 
             string name = string.IsNullOrEmpty(p.Name) ? "Um chefe" : p.Name;
-            string msg = p.Kind == S2C_WorldEvent.KindBossSlain ? $"{name} foi derrotado!" : $"{name} apareceu!";
+            string msg = p.Kind switch
+            {
+                S2C_WorldEvent.KindBossSlain => $"{name} foi derrotado!",
+                S2C_WorldEvent.KindBossWarn => $"{name} está retornando...",
+                _ => $"{name} apareceu!",
+            };
             Toast.Instance.Show(msg);
         }
     }

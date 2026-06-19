@@ -146,6 +146,7 @@ namespace Arcane_Aegis.Entities
             {
                 if (type == EntityType.ResourceNode) { var nd = library.GetResourceNode(monsterId); if (nd != null && nd.model3D != null) model = nd.model3D; }
                 else if (type == EntityType.Vendor) { var vd = library.GetVendor(monsterId); if (vd != null && vd.model3D != null) model = vd.model3D; }
+                else if (type == EntityType.Seal) { var md = library.GetMonster(monsterId); if (md != null && md.sealModel3D != null) model = md.sealModel3D; } // seal altar art
                 else { var md = library.GetMonster(monsterId); if (md != null && md.model3D != null) model = md.model3D; }
             }
 
@@ -204,12 +205,15 @@ namespace Arcane_Aegis.Entities
                 for (int i = 0; i < typePrefabs.Length; i++)
                     if (typePrefabs[i].type == type && typePrefabs[i].prefab != null)
                         return typePrefabs[i].prefab;
-            // Monsters/nodes fall back to "model IS the entity" (no player-prefab capsule) unless a dedicated prefab is set.
-            return type is EntityType.Monster or EntityType.ResourceNode or EntityType.Vendor ? null : characterPrefab;
+            // Monsters/nodes/seals fall back to "model IS the entity" (no player-prefab capsule) unless a dedicated prefab is set.
+            return type is EntityType.Monster or EntityType.ResourceNode or EntityType.Vendor or EntityType.Seal ? null : characterPrefab;
         }
 
         /// <summary>Nearest resource node within <paramref name="range"/> of a world position (for "press to gather").</summary>
         public EntityView NearestResourceNode(Vector3 worldPos, float range) => Nearest(worldPos, range, EntityType.ResourceNode);
+
+        /// <summary>Nearest sealed-boss altar within <paramref name="range"/> of a world position (for "press to break seal").</summary>
+        public EntityView NearestSeal(Vector3 worldPos, float range) => Nearest(worldPos, range, EntityType.Seal);
 
         /// <summary>Nearest vendor within <paramref name="range"/> of a world position (for "press to shop").</summary>
         public EntityView NearestVendor(Vector3 worldPos, float range) => Nearest(worldPos, range, EntityType.Vendor);

@@ -50,13 +50,36 @@ namespace Arcane_Aegis.Content
         [Tooltip("Raio de perambulação ocioso em volta do spawn (m). 0 = fica parado.")]
         public float patrolRadius = 0f;
 
-        [Header("Boss (só com Arquétipo = Boss)")]
+        [Header("Tipo — revela os campos extras (e o que é enviado ao servidor)")]
+        [Tooltip("Marque pra virar um BOSS (mostra fases/enrage/anúncio). Desmarcado = monstro comum, campos somem.")]
+        public bool isBoss = false;
+        [Tooltip("Marque pra virar um BOSS SELADO (mostra requisitos/selo). Implica Boss.")]
+        public bool isSealed = false;
+
+        [Header("Boss (aparece com 'É Boss')")]
         [Tooltip("Timer de enrage: após N s em combate o dano dobra (0 = nunca).")]
         public float enrageSeconds = 0f;
         [Tooltip("Anuncia o spawn/morte do boss pra zona inteira (banner).")]
         public bool announceGlobal = false;
         [Tooltip("Fases por limiar de vida: entra quando a vida cai ao %. O servidor ordena alto→baixo.")]
         public List<BossPhaseSO> phases = new();
+
+        [Header("Selado (opcional — vira boss selado)")]
+        [Tooltip("Nível mínimo do jogador pra quebrar o selo. 0 = não é selado.")]
+        public int sealMinLevel = 0;
+        [Tooltip("Segundos até o selo voltar depois que o boss morre (recorrente).")]
+        public float sealCooldown = 600f;
+        [Tooltip("Itens-chave consumidos pra quebrar o selo (runas/receita/artefato).")]
+        public List<SealReqSO> sealReqs = new();
+        [Tooltip("Modelo 3D do SELO/altar no mundo (cliente). Vazio = cápsula padrão.")]
+        public GameObject sealModel3D;
+
+        [System.Serializable]
+        public struct SealReqSO
+        {
+            [Tooltip("Item-chave exigido (consumido).")] public ItemDefinitionSO item;
+            [Min(1)] public int qty;
+        }
 
         [System.Serializable]
         public struct BossPhaseSO

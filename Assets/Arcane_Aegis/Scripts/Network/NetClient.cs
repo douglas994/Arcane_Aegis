@@ -165,6 +165,13 @@ namespace Arcane_Aegis.Network
             Send(new C2S_Gather { NodeId = nodeId }, DeliveryMethod.ReliableOrdered);
         }
 
+        /// <summary>Asks the server to break a nearby sealed-boss altar (server validates range + level + key items).</summary>
+        public void SendInteractSeal(ushort sealId)
+        {
+            if (!CanSend) return;
+            Send(new C2S_InteractSeal { SealId = sealId }, DeliveryMethod.ReliableOrdered);
+        }
+
         /// <summary>Asks the server to craft a recipe (server validates profession/ingredients/space + resolves on a timer).</summary>
         public void SendCraft(string recipeId)
         {

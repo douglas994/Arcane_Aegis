@@ -21,6 +21,12 @@ namespace Arcane_Aegis.Content
         [Tooltip("Segundos pra reviver cada criatura. 0 = não respawna (chefe/evento).")]
         [Min(0f)] public float respawnSeconds = 15f;
 
+        [Header("Elite raro (opcional — só monstros)")]
+        [Tooltip("Chance (0..1) de cada criatura spawnar como ELITE (stats/loot escalados, prefixo 'Elite'). 0 = nunca.")]
+        [Range(0f, 1f)] public float eliteChance = 0f;
+        [Tooltip("Multiplicador do elite (≤1 usa o padrão 1.6).")]
+        [Min(0f)] public float eliteScale = 1.6f;
+
         private void OnDrawGizmos()
         {
             // yellow = vendor, green = resource node, red = monster, grey = empty.

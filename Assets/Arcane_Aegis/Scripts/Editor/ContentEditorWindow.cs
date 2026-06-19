@@ -271,6 +271,7 @@ namespace Arcane_Aegis.EditorTools
                 foreach (var e in so.loot)
                     if (e.item != null && !string.IsNullOrWhiteSpace(e.item.id))
                         loot.Add(new MonsterRecord.LootEntry { ItemId = e.item.id, ChancePct = e.chancePct, Min = e.min, Max = e.max });
+            bool asBoss = so.isBoss || so.isSealed; // only send boss/seal data when the type toggle is on (sealed implies boss)
             return new MonsterRecord
             {
                 Id = so.id, Name = so.displayName ?? "",
@@ -287,10 +288,13 @@ namespace Arcane_Aegis.EditorTools
                 FleeHpPct = (byte)Mathf.Clamp(so.fleeHpPct, 0, 100),
                 EliteScale = so.eliteScale <= 0f ? 1f : so.eliteScale,
                 PatrolRadius = Mathf.Max(0f, so.patrolRadius),
-                EnrageSeconds = Mathf.Max(0f, so.enrageSeconds),
-                AnnounceGlobal = (byte)(so.announceGlobal ? 1 : 0),
+                EnrageSeconds = asBoss ? Mathf.Max(0f, so.enrageSeconds) : 0f,
+                AnnounceGlobal = (byte)(asBoss && so.announceGlobal ? 1 : 0),
+                SealMinLevel = (ushort)(so.isSealed ? Mathf.Clamp(so.sealMinLevel, 0, ushort.MaxValue) : 0),
+                SealCooldown = so.isSealed ? Mathf.Max(0f, so.sealCooldown) : 0f,
                 AbilityIds = BuildAbilityIds(so),
-                Phases = BuildPhases(so),
+                Phases = asBoss ? BuildPhases(so) : System.Array.Empty<MonsterRecord.BossPhase>(),
+                SealReqs = so.isSealed ? BuildSealReqs(so) : System.Array.Empty<MonsterRecord.SealReq>(),
                 Loot = loot.ToArray(),
             };
         }
@@ -308,6 +312,17 @@ namespace Arcane_Aegis.EditorTools
                     SummonId = p.summon != null ? p.summon.id : "",
                     SummonCount = (byte)Mathf.Clamp(p.summonCount, 0, 255),
                 });
+            return list.ToArray();
+        }
+
+        /// <summary>The boss's seal key-item requirements → wire records (valid item assets only).</summary>
+        private static MonsterRecord.SealReq[] BuildSealReqs(MonsterDefinitionSO so)
+        {
+            if (so.sealReqs == null || so.sealReqs.Count == 0) return System.Array.Empty<MonsterRecord.SealReq>();
+            var list = new System.Collections.Generic.List<MonsterRecord.SealReq>(so.sealReqs.Count);
+            foreach (var s in so.sealReqs)
+                if (s.item != null && !string.IsNullOrWhiteSpace(s.item.id))
+                    list.Add(new MonsterRecord.SealReq { ItemId = s.item.id, Qty = Mathf.Max(1, s.qty) });
             return list.ToArray();
         }
 
@@ -580,6 +595,7 @@ namespace Arcane_Aegis.EditorTools
                     {
                         ZoneId = (byte)_spawnZone, Kind = kind, MonsterId = contentId,
                         X = pos.x, Z = pos.z, Radius = mk.radius, Count = mk.count, RespawnSeconds = mk.respawnSeconds,
+                        EliteChance = kind == 0 ? mk.eliteChance : 0f, EliteScale = mk.eliteScale,
                     }
                 });
                 n++;
