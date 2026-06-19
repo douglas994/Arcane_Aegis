@@ -117,7 +117,13 @@ namespace Arcane_Aegis.Network
             router.Register(new PartyInviteHandler());
             router.Register(new PartyNoticeHandler());
             router.Register(new PartyVitalsHandler());
-            router.Register(new PartyChatHandler());
+            router.Register(new ChatHandler());
+            router.Register(new FriendListHandler());
+            router.Register(new FriendRequestHandler());
+            router.Register(new FriendNoticeHandler());
+            router.Register(new GuildRosterHandler());
+            router.Register(new GuildInviteHandler());
+            router.Register(new GuildNoticeHandler());
             return router;
         }
 
@@ -252,11 +258,84 @@ namespace Arcane_Aegis.Network
             Send(new C2S_PartyDisband(), DeliveryMethod.ReliableOrdered);
         }
 
-        /// <summary>Send a message to the party chat channel.</summary>
-        public void SendPartyChat(string text)
+        /// <summary>Send a chat message on a channel (Target = recipient name for whisper, else empty).</summary>
+        public void SendChat(ChatChannel channel, string target, string text)
         {
             if (!CanSend || string.IsNullOrWhiteSpace(text)) return;
-            Send(new C2S_PartyChat { Text = text.Trim() }, DeliveryMethod.ReliableOrdered);
+            Send(new C2S_Chat { Channel = (byte)channel, Target = target ?? string.Empty, Text = text.Trim() }, DeliveryMethod.ReliableOrdered);
+        }
+
+        // ── friends (routed by the Gateway to ArcaneSocial) ──
+
+        /// <summary>Request friendship with a player by name.</summary>
+        public void SendFriendAdd(string name)
+        {
+            if (!CanSend || string.IsNullOrWhiteSpace(name)) return;
+            Send(new C2S_FriendAdd { Name = name.Trim() }, DeliveryMethod.ReliableOrdered);
+        }
+
+        /// <summary>Answer a pending friend request (accept = become mutual friends).</summary>
+        public void SendFriendResponse(bool accept)
+        {
+            if (!CanSend) return;
+            Send(new C2S_FriendResponse { Accept = accept }, DeliveryMethod.ReliableOrdered);
+        }
+
+        /// <summary>Remove a friend by character id.</summary>
+        public void SendFriendRemove(uint characterId)
+        {
+            if (!CanSend) return;
+            Send(new C2S_FriendRemove { CharacterId = characterId }, DeliveryMethod.ReliableOrdered);
+        }
+
+        /// <summary>Ask for the current friend list (e.g. when the panel opens).</summary>
+        public void RequestFriends()
+        {
+            if (!CanSend) return;
+            Send(new C2S_RequestFriends(), DeliveryMethod.ReliableOrdered);
+        }
+
+        // ── guild (routed by the Gateway to ArcaneSocial) ──
+
+        public void SendGuildCreate(string name)
+        {
+            if (!CanSend || string.IsNullOrWhiteSpace(name)) return;
+            Send(new C2S_GuildCreate { Name = name.Trim() }, DeliveryMethod.ReliableOrdered);
+        }
+        public void SendGuildInvite(string name)
+        {
+            if (!CanSend || string.IsNullOrWhiteSpace(name)) return;
+            Send(new C2S_GuildInvite { Name = name.Trim() }, DeliveryMethod.ReliableOrdered);
+        }
+        public void SendGuildResponse(bool accept)
+        {
+            if (!CanSend) return;
+            Send(new C2S_GuildResponse { Accept = accept }, DeliveryMethod.ReliableOrdered);
+        }
+        public void SendGuildLeave()
+        {
+            if (!CanSend) return;
+            Send(new C2S_GuildLeave(), DeliveryMethod.ReliableOrdered);
+        }
+        public void SendGuildKick(uint characterId)
+        {
+            if (!CanSend) return;
+            Send(new C2S_GuildKick { CharacterId = characterId }, DeliveryMethod.ReliableOrdered);
+        }
+        public void SendGuildSetRank(uint characterId, byte rank)
+        {
+            if (!CanSend) return;
+            Send(new C2S_GuildSetRank { CharacterId = characterId, Rank = rank }, DeliveryMethod.ReliableOrdered);
+        }
+        public void SendGuildDisband()
+        {
+            if (!CanSend) return;
+            Send(new C2S_GuildDisband(), DeliveryMethod.ReliableOrdered);
+        }
+        public void RequestGuild()
+        {
+            if (!CanSend) return;
+            Send(new C2S_RequestGuild(), DeliveryMethod.ReliableOrdered);
         }
 
         private bool CanSend => _server != null && entities != null && entities.Local != null;

@@ -189,6 +189,129 @@ namespace Arcane_Aegis.EditorTools
             Done(holder, "Party Invite Prompt (aparece ao receber um convite)");
         }
 
+        [MenuItem("ArcaneMMO/UI/Friends Panel")]
+        public static void BuildFriends()
+        {
+            var canvas = GetOrCreateCanvas();
+            var holder = Holder(canvas.transform, "FriendPanel");
+            var window = WindowVisual(holder.transform, new Vector2(340, 420), out var body);
+            var panel = window.AddComponent<FriendPanel>();
+            var title = Label(body, "Title", "Amigos", 20, TextAlignmentOptions.Center); Top(title.rectTransform, 32);
+
+            var list = ScrollList(body, "FriendScroll", 44, 300);
+
+            var addField = InputField(body, "AddName", "Nome do jogador…");
+            var afr = RT(addField.gameObject); afr.anchorMin = new Vector2(0, 0); afr.anchorMax = new Vector2(1, 0); afr.pivot = new Vector2(0, 0); afr.anchoredPosition = new Vector2(0, 12); afr.sizeDelta = new Vector2(-120, 30);
+            var addBtn = Button(body.transform, "AddButton", "Adicionar", new Vector2(112, 30)); var abr = RT(addBtn); abr.anchorMin = new Vector2(1, 0); abr.anchorMax = new Vector2(1, 0); abr.pivot = new Vector2(1, 0); abr.anchoredPosition = new Vector2(0, 12);
+
+            var rowTemplate = FriendRowTemplate(holder.transform);
+
+            var so = new SerializedObject(panel);
+            Set(so, "rowPrefab", rowTemplate);
+            Set(so, "container", list);
+            Set(so, "addName", addField);
+            Set(so, "addButton", addBtn.GetComponent<Button>());
+            so.ApplyModifiedProperties();
+
+            AddToggle(holder, window, Key.L);
+            Done(holder, "Friends Panel (tecla L abre) — adicionar por nome, remover");
+        }
+
+        [MenuItem("ArcaneMMO/UI/Friend Request Prompt")]
+        public static void BuildFriendRequest()
+        {
+            var canvas = GetOrCreateCanvas();
+            var holder = Holder(canvas.transform, "FriendRequestPrompt");
+            var prompt = holder.AddComponent<FriendRequestPrompt>();
+
+            var window = Panel(holder.transform, "Window", new Vector2(340, 150), Bg);
+            var rt = RT(window); rt.anchorMin = rt.anchorMax = new Vector2(0.5f, 0.5f); rt.pivot = new Vector2(0.5f, 0.5f); rt.anchoredPosition = new Vector2(0, 60);
+
+            var msg = Label(window, "Message", "Fulano quer te adicionar como amigo.", 15, TextAlignmentOptions.Center);
+            var mr = msg.rectTransform; mr.anchorMin = new Vector2(0, 1); mr.anchorMax = new Vector2(1, 1); mr.pivot = new Vector2(0.5f, 1); mr.anchoredPosition = new Vector2(0, -16); mr.sizeDelta = new Vector2(-20, 60);
+
+            var accept = Button(window.transform, "Accept", "Aceitar", new Vector2(120, 34)); var ar = RT(accept); ar.anchorMin = ar.anchorMax = new Vector2(0, 0); ar.pivot = new Vector2(0, 0); ar.anchoredPosition = new Vector2(16, 16);
+            var decline = Button(window.transform, "Decline", "Recusar", new Vector2(120, 34)); var dr = RT(decline); dr.anchorMin = dr.anchorMax = new Vector2(1, 0); dr.pivot = new Vector2(1, 0); dr.anchoredPosition = new Vector2(-16, 16);
+
+            var so = new SerializedObject(prompt);
+            Set(so, "panel", window);
+            Set(so, "message", msg);
+            Set(so, "acceptButton", accept.GetComponent<Button>());
+            Set(so, "declineButton", decline.GetComponent<Button>());
+            so.ApplyModifiedProperties();
+            Done(holder, "Friend Request Prompt (aparece ao receber um pedido)");
+        }
+
+        [MenuItem("ArcaneMMO/UI/Guild Panel")]
+        public static void BuildGuild()
+        {
+            var canvas = GetOrCreateCanvas();
+            var holder = Holder(canvas.transform, "GuildPanel");
+            var window = WindowVisual(holder.transform, new Vector2(380, 460), out var body);
+            var panel = window.AddComponent<GuildPanel>();
+            var title = Label(body, "Title", "Guilda", 20, TextAlignmentOptions.Center); Top(title.rectTransform, 32);
+
+            // ── Create mode (no guild) ──
+            var createRoot = New("CreateRoot", body); var crrt = RT(createRoot); Stretch(crrt); crrt.offsetMin = new Vector2(0, 0); crrt.offsetMax = new Vector2(0, -40);
+            var createName = InputField(crrt, "CreateName", "Nome da guilda…");
+            var cnr = RT(createName.gameObject); cnr.anchorMin = cnr.anchorMax = new Vector2(0.5f, 0.5f); cnr.pivot = new Vector2(0.5f, 0.5f); cnr.anchoredPosition = new Vector2(0, 20); cnr.sizeDelta = new Vector2(240, 32);
+            var createBtn = Button(createRoot.transform, "CreateButton", "Criar Guilda", new Vector2(160, 34)); var cbr = RT(createBtn); cbr.anchorMin = cbr.anchorMax = new Vector2(0.5f, 0.5f); cbr.pivot = new Vector2(0.5f, 0.5f); cbr.anchoredPosition = new Vector2(0, -24);
+
+            // ── Guild mode (in a guild) ──
+            var guildRoot = New("GuildRoot", body); var grrt = RT(guildRoot); Stretch(grrt); grrt.offsetMin = new Vector2(0, 0); grrt.offsetMax = new Vector2(0, -40);
+            var nameLabel = Label(guildRoot, "GuildName", "Guilda", 17, TextAlignmentOptions.Center); var nlr = nameLabel.rectTransform; nlr.anchorMin = new Vector2(0, 1); nlr.anchorMax = new Vector2(1, 1); nlr.pivot = new Vector2(0.5f, 1); nlr.anchoredPosition = new Vector2(0, 0); nlr.sizeDelta = new Vector2(0, 26);
+            var list = ScrollList(grrt, "GuildScroll", 32, 232);
+            var inviteName = InputField(grrt, "InviteName", "Convidar por nome…");
+            var inr = RT(inviteName.gameObject); inr.anchorMin = new Vector2(0, 0); inr.anchorMax = new Vector2(1, 0); inr.pivot = new Vector2(0, 0); inr.anchoredPosition = new Vector2(0, 50); inr.sizeDelta = new Vector2(-120, 30);
+            var inviteBtn = Button(guildRoot.transform, "InviteButton", "Convidar", new Vector2(112, 30)); var ibr = RT(inviteBtn); ibr.anchorMin = new Vector2(1, 0); ibr.anchorMax = new Vector2(1, 0); ibr.pivot = new Vector2(1, 0); ibr.anchoredPosition = new Vector2(0, 50);
+            var leaveBtn = Button(guildRoot.transform, "LeaveButton", "Sair", new Vector2(112, 32)); var lbr = RT(leaveBtn); lbr.anchorMin = lbr.anchorMax = new Vector2(0, 0); lbr.pivot = new Vector2(0, 0); lbr.anchoredPosition = new Vector2(0, 12);
+            var disbandBtn = Button(guildRoot.transform, "DisbandButton", "Desfazer", new Vector2(112, 32)); var dbr = RT(disbandBtn); dbr.anchorMin = dbr.anchorMax = new Vector2(1, 0); dbr.pivot = new Vector2(1, 0); dbr.anchoredPosition = new Vector2(0, 12);
+
+            var rowTemplate = GuildRowTemplate(holder.transform);
+
+            var so = new SerializedObject(panel);
+            Set(so, "createRoot", createRoot);
+            Set(so, "createName", createName);
+            Set(so, "createButton", createBtn.GetComponent<Button>());
+            Set(so, "guildRoot", guildRoot);
+            Set(so, "guildNameLabel", nameLabel);
+            Set(so, "rowPrefab", rowTemplate);
+            Set(so, "container", list);
+            Set(so, "inviteName", inviteName);
+            Set(so, "inviteButton", inviteBtn.GetComponent<Button>());
+            Set(so, "leaveButton", leaveBtn.GetComponent<Button>());
+            Set(so, "disbandButton", disbandBtn.GetComponent<Button>());
+            so.ApplyModifiedProperties();
+
+            AddToggle(holder, window, Key.G);
+            Done(holder, "Guild Panel (tecla G abre) — criar/convidar/ranks/sair/desfazer");
+        }
+
+        [MenuItem("ArcaneMMO/UI/Guild Invite Prompt")]
+        public static void BuildGuildInvite()
+        {
+            var canvas = GetOrCreateCanvas();
+            var holder = Holder(canvas.transform, "GuildInvitePrompt");
+            var prompt = holder.AddComponent<GuildInvitePrompt>();
+
+            var window = Panel(holder.transform, "Window", new Vector2(360, 150), Bg);
+            var rt = RT(window); rt.anchorMin = rt.anchorMax = new Vector2(0.5f, 0.5f); rt.pivot = new Vector2(0.5f, 0.5f); rt.anchoredPosition = new Vector2(0, -40);
+
+            var msg = Label(window, "Message", "Fulano convidou você para a guilda X.", 15, TextAlignmentOptions.Center);
+            var mr = msg.rectTransform; mr.anchorMin = new Vector2(0, 1); mr.anchorMax = new Vector2(1, 1); mr.pivot = new Vector2(0.5f, 1); mr.anchoredPosition = new Vector2(0, -16); mr.sizeDelta = new Vector2(-20, 60);
+
+            var accept = Button(window.transform, "Accept", "Aceitar", new Vector2(120, 34)); var ar = RT(accept); ar.anchorMin = ar.anchorMax = new Vector2(0, 0); ar.pivot = new Vector2(0, 0); ar.anchoredPosition = new Vector2(16, 16);
+            var decline = Button(window.transform, "Decline", "Recusar", new Vector2(120, 34)); var dr = RT(decline); dr.anchorMin = dr.anchorMax = new Vector2(1, 0); dr.pivot = new Vector2(1, 0); dr.anchoredPosition = new Vector2(-16, 16);
+
+            var so = new SerializedObject(prompt);
+            Set(so, "panel", window);
+            Set(so, "message", msg);
+            Set(so, "acceptButton", accept.GetComponent<Button>());
+            Set(so, "declineButton", decline.GetComponent<Button>());
+            so.ApplyModifiedProperties();
+            Done(holder, "Guild Invite Prompt (aparece ao receber um convite)");
+        }
+
         [MenuItem("ArcaneMMO/UI/Chat Panel")]
         public static void BuildChat()
         {
@@ -210,8 +333,12 @@ namespace Arcane_Aegis.EditorTools
             var csf = content.AddComponent<ContentSizeFitter>(); csf.verticalFit = ContentSizeFitter.FitMode.PreferredSize;
             sr.viewport = vrt; sr.content = crt;
 
-            var input = InputField(brt, "ChatInput", "Mensagem do grupo…");
-            var ir = RT(input.gameObject); ir.anchorMin = new Vector2(0, 0); ir.anchorMax = new Vector2(1, 0); ir.pivot = new Vector2(0, 0); ir.anchoredPosition = new Vector2(0, 0); ir.sizeDelta = new Vector2(-84, 30);
+            // Bottom row: [channel] [input.......] [send]
+            var channel = Button(body.transform, "Channel", "Global", new Vector2(76, 30)); var chr = RT(channel); chr.anchorMin = new Vector2(0, 0); chr.anchorMax = new Vector2(0, 0); chr.pivot = new Vector2(0, 0); chr.anchoredPosition = new Vector2(0, 0);
+            var channelLabel = channel.GetComponentInChildren<TMP_Text>();
+
+            var input = InputField(brt, "ChatInput", "Mensagem…  (/g /z /p, /w Nome)");
+            var ir = RT(input.gameObject); ir.anchorMin = new Vector2(0, 0); ir.anchorMax = new Vector2(1, 0); ir.pivot = new Vector2(0, 0); ir.anchoredPosition = new Vector2(80, 0); ir.sizeDelta = new Vector2(-164, 30);
             var send = Button(body.transform, "Send", "Enviar", new Vector2(76, 30)); var sndr = RT(send); sndr.anchorMin = new Vector2(1, 0); sndr.anchorMax = new Vector2(1, 0); sndr.pivot = new Vector2(1, 0); sndr.anchoredPosition = new Vector2(0, 0);
 
             var so = new SerializedObject(chat);
@@ -219,8 +346,10 @@ namespace Arcane_Aegis.EditorTools
             Set(so, "scroll", sr);
             Set(so, "input", input);
             Set(so, "sendButton", send.GetComponent<Button>());
+            Set(so, "channelButton", channel.GetComponent<Button>());
+            Set(so, "channelLabel", channelLabel);
             so.ApplyModifiedProperties();
-            Done(holder, "Chat Panel (canto inf. esq.) — Enter ou Enviar manda no grupo");
+            Done(holder, "Chat Panel (canto inf. esq.) — botão troca canal; /g /z /p /w funcionam");
         }
 
         [MenuItem("ArcaneMMO/UI/Gather + Craft Bars")]
@@ -383,6 +512,45 @@ namespace Arcane_Aegis.EditorTools
             var so = new SerializedObject(pr);
             Set(so, "nameLabel", name); Set(so, "levelLabel", level); Set(so, "hpFill", fill);
             Set(so, "leaderMarker", leader); Set(so, "kickButton", kick.GetComponent<Button>());
+            so.ApplyModifiedProperties();
+            row.SetActive(false);
+            return row;
+        }
+
+        // Friend row prefab (name + online status + remove) carrying a FriendRow component.
+        private static GameObject FriendRowTemplate(Transform parent)
+        {
+            var row = Row(parent, "FriendRowTemplate");
+            var name = Label(row, "Name", "Amigo", 14, TextAlignmentOptions.Left); Flexible(name.gameObject);
+            var status = Label(row, "Status", "Offline", 12, TextAlignmentOptions.Right); Fixed(status.gameObject, 60);
+            var whisper = Button(row.transform, "Whisper", "Falar", new Vector2(56, 26)); Fixed(whisper, 56);
+            var remove = Button(row.transform, "Remove", "X", new Vector2(26, 26)); Fixed(remove, 26);
+
+            var fr = row.AddComponent<FriendRow>();
+            var so = new SerializedObject(fr);
+            Set(so, "nameLabel", name); Set(so, "statusLabel", status);
+            Set(so, "whisperButton", whisper.GetComponent<Button>());
+            Set(so, "removeButton", remove.GetComponent<Button>());
+            so.ApplyModifiedProperties();
+            row.SetActive(false);
+            return row;
+        }
+
+        // Guild row prefab (name + rank + status + leader rank-toggle + kick) carrying a GuildRow component.
+        private static GameObject GuildRowTemplate(Transform parent)
+        {
+            var row = Row(parent, "GuildRowTemplate");
+            var name = Label(row, "Name", "Membro", 14, TextAlignmentOptions.Left); Flexible(name.gameObject);
+            var rank = Label(row, "Rank", "Membro", 12, TextAlignmentOptions.Right); Fixed(rank.gameObject, 56);
+            var status = Label(row, "Status", "Offline", 12, TextAlignmentOptions.Right); Fixed(status.gameObject, 52);
+            var rankBtn = Button(row.transform, "RankBtn", "Promover", new Vector2(78, 26)); Fixed(rankBtn, 78);
+            var kick = Button(row.transform, "Kick", "X", new Vector2(26, 26)); Fixed(kick, 26);
+
+            var gr = row.AddComponent<GuildRow>();
+            var so = new SerializedObject(gr);
+            Set(so, "nameLabel", name); Set(so, "rankLabel", rank); Set(so, "statusLabel", status);
+            Set(so, "rankButton", rankBtn.GetComponent<Button>());
+            Set(so, "kickButton", kick.GetComponent<Button>());
             so.ApplyModifiedProperties();
             row.SetActive(false);
             return row;
