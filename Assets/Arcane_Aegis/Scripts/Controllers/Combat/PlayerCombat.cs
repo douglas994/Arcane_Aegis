@@ -21,7 +21,9 @@ namespace Arcane_Aegis.Controllers.Combat
         [SerializeField] private byte basicAbilityId = 1;
         [SerializeField] private float defaultCooldown = 0.3f; // assumed until the server tells us the real value
         [SerializeField] private PlayerInput input;
-        [SerializeField] private CharacterAnimator animator;
+        [SerializeField] private Arcane_Aegis.Combat.TargetingSystem targeting; // current target id (0 = action aim)
+
+        private Arcane_Aegis.Entities.EntityAnimation _anim; // trigger-animation hub (predicted cast presentation)
 
         private NetClient _net;
         private Arcane_Aegis.Entities.PlayerView _self;               // own view → current mana + entity id
@@ -33,7 +35,8 @@ namespace Arcane_Aegis.Controllers.Combat
         private void Start()
         {
             if (input == null) input = GetComponent<PlayerInput>();
-            if (animator == null) animator = GetComponentInChildren<CharacterAnimator>();
+            _anim = Arcane_Aegis.Entities.EntityAnimation.Of(gameObject);
+            if (targeting == null) targeting = FindAnyObjectByType<Arcane_Aegis.Combat.TargetingSystem>();
             _self = GetComponent<Arcane_Aegis.Entities.PlayerView>();
             _net = NetClient.Instance ?? FindAnyObjectByType<NetClient>();
         }
@@ -79,11 +82,10 @@ namespace Arcane_Aegis.Controllers.Combat
             _castAt[abilityId] = Time.time;
             _readyAt[abilityId] = Time.time + dur;
 
-            _net.SendCast(abilityId, 0);                     // 0 = action aim; server uses our facing
+            ushort targetId = targeting != null ? targeting.CurrentTargetId : (ushort)0;
+            _net.SendCast(abilityId, targetId);              // locked/aimed target id (0 = action aim → server uses our facing)
             if (_self != null) Arcane_Aegis.Combat.CombatStance.Mark(_self.Id); // draw the weapon on the swing (instant, no round-trip wait)
-            // predicted presentation: the skill's own anim + cast VFX (falls back to the generic attack).
-            if (Arcane_Aegis.Combat.CombatFx.Instance != null) Arcane_Aegis.Combat.CombatFx.Instance.PlayCast(transform, animator, abilityId);
-            else if (animator != null) animator.TriggerAttack();
+            _anim.PlayCast(abilityId); // predicted presentation: skill anim + cast VFX (or generic attack fallback)
             return true;
         }
 

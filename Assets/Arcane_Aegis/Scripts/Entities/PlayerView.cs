@@ -12,9 +12,35 @@ namespace Arcane_Aegis.Entities
     /// <see cref="Spawn"/> wires the control layer:
     ///   local  → KCC + FSM + input drive the transform (interpolation OFF, anim from the FSM)
     ///   remote → snapshot interpolation drives it (control OFF, anim from networked speed)
+    /// Holds the OWN player's exact vitals/XP (from S2C_StateUpdate / S2C_Experience) for the HUD — remotes only
+    /// carry the quantized <see cref="EntityView.SnapHp01"/>.
     /// </summary>
     public class PlayerView : HumanoidView
     {
+        // Exact vitals — filled for the OWN player from S2C_StateUpdate (the HUD reads these).
+        public int Hp { get; private set; }
+        public int MaxHp { get; private set; }
+        public int Mana { get; private set; }
+        public int MaxMana { get; private set; }
+        public float HpFraction => MaxHp > 0 ? (float)Hp / MaxHp : 0f;
+        public float ManaFraction => MaxMana > 0 ? (float)Mana / MaxMana : 0f;
+
+        // XP/level (own player only, from S2C_Experience) — drives the HUD XP bar.
+        public ushort Level { get; private set; } = 1;
+        public uint Xp { get; private set; }
+        public uint XpToNext { get; private set; } = 1;
+        public float XpFraction => XpToNext > 0 ? Mathf.Clamp01((float)Xp / XpToNext) : 0f;
+
+        public void SetVitals(int hp, int maxHp, int mana, int maxMana)
+        {
+            Hp = hp; MaxHp = maxHp; Mana = mana; MaxMana = maxMana;
+        }
+
+        public void SetExperience(ushort level, uint xp, uint xpToNext)
+        {
+            Level = level; Xp = xp; XpToNext = xpToNext;
+        }
+
         /// <summary>The KCC motor (local only) — used for server position corrections.</summary>
         public KinematicCharacterMotor Motor { get; private set; }
         public bool IsLocal { get; private set; }
@@ -54,7 +80,7 @@ namespace Arcane_Aegis.Entities
                 else anim.UseNetworkSource();          // speed/state from the network (EntityView)
             }
 
-            ShowWorldVitals(!isLocal);                 // own HP is on the HUD, not above the head
+            GetComponent<CombatantVitals>()?.ShowWorldBar(!isLocal); // own HP is on the HUD, not above the head
 
             // Show the equipped weapon model on EVERY player (local from inventory, remotes from the replicated id).
             if (GetComponent<Arcane_Aegis.Combat.WeaponVisual>() == null)

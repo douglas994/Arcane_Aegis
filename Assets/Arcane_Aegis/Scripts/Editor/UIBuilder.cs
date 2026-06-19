@@ -7,6 +7,7 @@ using TMPro;
 using Arcane_Aegis.UI;
 using Arcane_Aegis.Content;
 using Arcane_Aegis.Controllers;
+using Arcane_Aegis.Combat;
 
 namespace Arcane_Aegis.EditorTools
 {
@@ -350,6 +351,34 @@ namespace Arcane_Aegis.EditorTools
             Set(so, "channelLabel", channelLabel);
             so.ApplyModifiedProperties();
             Done(holder, "Chat Panel (canto inf. esq.) — botão troca canal; /g /z /p /w funcionam");
+        }
+
+        [MenuItem("ArcaneMMO/UI/Target Frame")]
+        public static void BuildTargetFrame()
+        {
+            var canvas = GetOrCreateCanvas();
+            var holder = Holder(canvas.transform, "TargetFrame");
+            var frame = holder.AddComponent<TargetFrame>();
+
+            // Toggled visual: a small panel at top-center (name + HP bar). TargetFrame.Update shows/hides it.
+            var window = Panel(holder.transform, "Window", new Vector2(240, 60), Bg);
+            var rt = RT(window); rt.anchorMin = rt.anchorMax = new Vector2(0.5f, 1f); rt.pivot = new Vector2(0.5f, 1f); rt.anchoredPosition = new Vector2(0, -16);
+
+            var name = Label(window, "Name", "Alvo", 16, TextAlignmentOptions.Center);
+            var nr = name.rectTransform; nr.anchorMin = new Vector2(0, 1); nr.anchorMax = new Vector2(1, 1); nr.pivot = new Vector2(0.5f, 1); nr.anchoredPosition = new Vector2(0, -6); nr.sizeDelta = new Vector2(-12, 24);
+
+            var barBg = Img(window.transform, "HpBarBG", Vector2.zero); var brt = RT(barBg); brt.anchorMin = new Vector2(0, 0); brt.anchorMax = new Vector2(1, 0); brt.pivot = new Vector2(0.5f, 0); brt.anchoredPosition = new Vector2(0, 8); brt.sizeDelta = new Vector2(-16, 16); barBg.GetComponent<Image>().color = new Color(0, 0, 0, 0.5f);
+            var fillGo = Img(barBg.transform, "Fill", Vector2.zero); Stretch(RT(fillGo)); var fill = fillGo.GetComponent<Image>(); fill.color = new Color(0.85f, 0.3f, 0.3f, 1f); fill.type = Image.Type.Filled; fill.fillMethod = Image.FillMethod.Horizontal; fill.fillAmount = 1f;
+
+            var targeting = EnsureController<TargetingSystem>("TargetingSystem"); // create + wire the targeting system
+
+            var so = new SerializedObject(frame);
+            Set(so, "root", window);
+            Set(so, "fill", fill);
+            Set(so, "nameLabel", name);
+            Set(so, "targeting", targeting);
+            so.ApplyModifiedProperties();
+            Done(holder, "Target Frame (topo-centro) — nome + HP do alvo; cria/liga o TargetingSystem (Tab cicla, clique trava, Esc solta)");
         }
 
         [MenuItem("ArcaneMMO/UI/Gather + Craft Bars")]

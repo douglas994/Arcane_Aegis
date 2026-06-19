@@ -31,7 +31,20 @@ namespace Arcane_Aegis.EditorTools
             Section("Comportamento");
             P("aggroRadius", "Raio de aggro (m)"); P("leashRadius", "Raio de leash (m)");
             P("attackRange", "Alcance de ataque (m)"); P("moveSpeed", "Velocidade");
-            P("attackAbilityId", "Skill de ataque (id)"); P("xpReward", "XP ao matar");
+            P("attackAbilityId", "Skill de ataque legada (id)"); P("xpReward", "XP ao matar");
+
+            Section("IA — arquétipo + skills");
+            P("archetype", "Arquétipo"); P("abilities", "Skills da IA");
+            P("fleeHpPct", "Foge abaixo de (% vida)"); P("eliteScale", "Escala Elite");
+            P("patrolRadius", "Raio de ronda (m)");
+
+            Section("Hitbox de mira");
+            P("hitboxRadius", "Raio (m)"); P("hitboxHeight", "Altura (m)");
+
+            Section("Boss (opcional — preencher torna o monstro um boss)");
+            EditorGUILayout.HelpBox("Um boss é um monstro com fases/enrage/anúncio. O arquétipo acima continua sendo o ESTILO de luta (melee/ranged/caster). Deixe vazio para um monstro normal.", MessageType.None);
+            P("enrageSeconds", "Enrage após (s)"); P("announceGlobal", "Anunciar na zona");
+            P("phases", "Fases (por % de vida)");
 
             Section("Loot");
             EditorGUILayout.HelpBox("Cada linha: um item + chance (%) + quantidade. A sorte (LUK) do matador dá um bônus pequeno na chance.", MessageType.None);

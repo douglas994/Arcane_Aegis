@@ -46,6 +46,7 @@ namespace Arcane_Aegis.EditorTools
             EditorGUILayout.PropertyField(targeting, new GUIContent("Tipo de mira"));
             var mode = (TargetingMode)targeting.enumValueIndex;
             EditorGUILayout.LabelField(TargetingHint(mode), EditorStyles.miniLabel);
+            EditorGUILayout.PropertyField(serializedObject.FindProperty("targetSide"), new GUIContent("Lado do alvo", "Enemy = dano/CC · Ally = cura/buff/escudo (mira aliados, pode incluir você)."));
             if (mode != TargetingMode.Self)
                 EditorGUILayout.PropertyField(serializedObject.FindProperty("range"), new GUIContent(RangeLabel(mode)));
             if (mode == TargetingMode.Cone)
@@ -219,7 +220,8 @@ namespace Arcane_Aegis.EditorTools
             AbilityEffectType.Shield     => "Escudo (pontos)",
             AbilityEffectType.Dash       => "Avanço (m)",
             AbilityEffectType.Projectile => "Velocidade (m/s)",
-            _                            => null, // Blink usa Range; ApplyStatus/Summon não usam amount
+            AbilityEffectType.Summon     => "Quantidade",
+            _                            => null, // Blink usa Range; ApplyStatus não usa amount
         };
 
         private static string EffectHint(AbilityEffectType t) => t switch

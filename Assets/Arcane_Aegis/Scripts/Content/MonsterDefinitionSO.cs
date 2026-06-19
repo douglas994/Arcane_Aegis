@@ -35,11 +35,46 @@ namespace Arcane_Aegis.Content
         [Tooltip("Desiste e volta pra casa se arrastado a este raio (m).")] public float leashRadius = 22f;
         [Tooltip("Alcance pra atacar (m).")] public float attackRange = 2.5f;
         public float moveSpeed = 3.5f;
-        [Tooltip("Skill usada pra atacar (id 1..255).")] public int attackAbilityId = 1;
+        [Tooltip("Skill de ataque legada (id 1..255). Usada só se a lista 'Skills da IA' abaixo estiver vazia.")] public int attackAbilityId = 1;
         [Tooltip("XP concedido a quem matar.")] public int xpReward = 25;
+
+        [Header("IA — arquétipo + skills")]
+        [Tooltip("Personalidade: Melee fecha distância · Ranged/Caster atiram de longe · Support cura aliados · Passive foge ao apanhar.")]
+        public AiArchetype archetype = AiArchetype.Melee;
+        [Tooltip("Skills que a IA pode usar (arraste os Skill assets). Vazio = usa a 'Skill de ataque' acima. O selector escolhe a melhor no alcance/CD.")]
+        public List<SkillDefinitionSO> abilities = new();
+        [Tooltip("Foge abaixo deste % de vida (0 = nunca; Passive foge sempre ao apanhar).")]
+        [Range(0, 100)] public int fleeHpPct = 0;
+        [Tooltip("Multiplicador de stats/loot pra versão Elite (1 = normal).")]
+        public float eliteScale = 1f;
+        [Tooltip("Raio de perambulação ocioso em volta do spawn (m). 0 = fica parado.")]
+        public float patrolRadius = 0f;
+
+        [Header("Boss (só com Arquétipo = Boss)")]
+        [Tooltip("Timer de enrage: após N s em combate o dano dobra (0 = nunca).")]
+        public float enrageSeconds = 0f;
+        [Tooltip("Anuncia o spawn/morte do boss pra zona inteira (banner).")]
+        public bool announceGlobal = false;
+        [Tooltip("Fases por limiar de vida: entra quando a vida cai ao %. O servidor ordena alto→baixo.")]
+        public List<BossPhaseSO> phases = new();
+
+        [System.Serializable]
+        public struct BossPhaseSO
+        {
+            [Tooltip("Entra nesta fase quando a vida cai a este % (0–100).")] [Range(0, 100)] public int hpPct;
+            [Tooltip("Multiplicador de dano nesta fase (1 = normal).")] public float damageMult;
+            [Tooltip("Monstro a invocar ao entrar na fase (arraste o asset; vazio = nenhum).")] public MonsterDefinitionSO summon;
+            [Tooltip("Quantos invocar.")] public int summonCount;
+        }
 
         [Header("Loot")]
         public List<LootEntry> loot = new();
+
+        [Header("Client — hitbox de mira/seleção (NOT synced)")]
+        [Tooltip("Raio do collider de mira (m). 0 = padrão (0.4). Escala com o modelo (boss grande, bicho pequeno).")]
+        public float hitboxRadius = 0.5f;
+        [Tooltip("Altura do collider de mira (m). 0 = padrão (2).")]
+        public float hitboxHeight = 2f;
 
         [Header("Client art — NOT synced")]
         public Sprite icon;

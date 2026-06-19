@@ -124,6 +124,7 @@ namespace Arcane_Aegis.Network
             router.Register(new GuildRosterHandler());
             router.Register(new GuildInviteHandler());
             router.Register(new GuildNoticeHandler());
+            router.Register(new WorldEventHandler());
             return router;
         }
 

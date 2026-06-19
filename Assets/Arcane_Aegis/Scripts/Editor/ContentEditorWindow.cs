@@ -256,7 +256,7 @@ namespace Arcane_Aegis.EditorTools
                 Id = (byte)Mathf.Clamp(so.id, 1, 255),
                 Name = so.displayName ?? "",
                 CastTime = so.castTime, Cooldown = so.cooldown, Cost = so.cost,
-                Targeting = (byte)so.targeting, Range = so.range, ConeAngle = so.coneAngle, Width = so.width,
+                Targeting = (byte)so.targeting, TargetSide = (byte)so.targetSide, Range = so.range, ConeAngle = so.coneAngle, Width = so.width,
                 Element = (byte)so.element,
                 RequiredWeapon = so.requiredWeapon ?? "",
                 Effects = effects.ToArray(),
@@ -283,8 +283,47 @@ namespace Arcane_Aegis.EditorTools
                 Disposition = (byte)so.disposition,
                 Kind = (byte)so.kind,
                 MaxHp = Mathf.Max(0, so.maxHp),
+                Archetype = (byte)so.archetype,
+                FleeHpPct = (byte)Mathf.Clamp(so.fleeHpPct, 0, 100),
+                EliteScale = so.eliteScale <= 0f ? 1f : so.eliteScale,
+                PatrolRadius = Mathf.Max(0f, so.patrolRadius),
+                EnrageSeconds = Mathf.Max(0f, so.enrageSeconds),
+                AnnounceGlobal = (byte)(so.announceGlobal ? 1 : 0),
+                AbilityIds = BuildAbilityIds(so),
+                Phases = BuildPhases(so),
                 Loot = loot.ToArray(),
             };
+        }
+
+        /// <summary>The boss phases → wire records (only valid rows; the server orders them high→low by HP%).</summary>
+        private static MonsterRecord.BossPhase[] BuildPhases(MonsterDefinitionSO so)
+        {
+            if (so.phases == null || so.phases.Count == 0) return System.Array.Empty<MonsterRecord.BossPhase>();
+            var list = new System.Collections.Generic.List<MonsterRecord.BossPhase>(so.phases.Count);
+            foreach (var p in so.phases)
+                list.Add(new MonsterRecord.BossPhase
+                {
+                    HpPct = (byte)Mathf.Clamp(p.hpPct, 0, 100),
+                    DamageMult = p.damageMult <= 0f ? 1f : p.damageMult,
+                    SummonId = p.summon != null ? p.summon.id : "",
+                    SummonCount = (byte)Mathf.Clamp(p.summonCount, 0, 255),
+                });
+            return list.ToArray();
+        }
+
+        /// <summary>The monster's AI ability list → byte ids (dedup, valid skill assets only). Empty → the server falls
+        /// back to the legacy AttackAbilityId.</summary>
+        private static byte[] BuildAbilityIds(MonsterDefinitionSO so)
+        {
+            if (so.abilities == null || so.abilities.Count == 0) return System.Array.Empty<byte>();
+            var ids = new System.Collections.Generic.List<byte>(so.abilities.Count);
+            foreach (var sk in so.abilities)
+            {
+                if (sk == null) continue;
+                byte id = (byte)Mathf.Clamp(sk.id, 1, 255);
+                if (!ids.Contains(id)) ids.Add(id);
+            }
+            return ids.ToArray();
         }
 
         /// <summary>ResourceNodeDefinitionSO → the server's ResourceNodeRecord (yield items emit their template id).</summary>

@@ -20,7 +20,7 @@ namespace Arcane_Aegis.UI
         [SerializeField] private float showSeconds = 5f; // hide a bar this long after the last hit
         [SerializeField] private float headOffset = 2.2f;// metres above the entity origin
 
-        private sealed class Active { public EnemyBar bar; public HumanoidView target; public float until; }
+        private sealed class Active { public EnemyBar bar; public EntityView target; public float until; }
         private readonly Dictionary<ushort, Active> _active = new();
         private readonly Stack<EnemyBar> _pool = new();
         private readonly List<ushort> _expired = new();
@@ -46,13 +46,13 @@ namespace Arcane_Aegis.UI
         /// <summary>Show (or refresh) the bar for a monster that just took damage.</summary>
         public void Show(EntityView view)
         {
-            if (view is not HumanoidView hv) return;
+            if (view == null) return;
             if (_active.TryGetValue(view.Id, out var a)) { a.until = Time.time + showSeconds; return; }
             if (_pool.Count == 0) return; // pool exhausted → skip (cap reached)
             var bar = _pool.Pop();
             bar.SetVisible(true);
             bar.SetLabel(string.IsNullOrEmpty(view.DisplayName) ? view.name : view.DisplayName);
-            _active[view.Id] = new Active { bar = bar, target = hv, until = Time.time + showSeconds };
+            _active[view.Id] = new Active { bar = bar, target = view, until = Time.time + showSeconds };
         }
 
         private void LateUpdate()
@@ -71,7 +71,7 @@ namespace Arcane_Aegis.UI
                 if (sp.z <= 0f) { a.bar.SetVisible(false); continue; } // behind the camera → hide (keep tracking)
                 a.bar.SetVisible(true);
                 a.bar.Rt.position = sp;           // screen-space overlay canvas → screen px = position
-                a.bar.SetHp(a.target.BarHpFraction);
+                a.bar.SetHp(a.target.SnapHp01);
             }
             for (int i = 0; i < _expired.Count; i++) Recycle(_expired[i]);
         }

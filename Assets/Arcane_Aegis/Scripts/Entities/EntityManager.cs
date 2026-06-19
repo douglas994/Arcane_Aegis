@@ -50,8 +50,10 @@ namespace Arcane_Aegis.Entities
             view.DisplayName = data.Name ?? "";
             view.WorldOffset = ZoneOffset; // render this continent's locals in global space
             view.EquippedMainHand = data.MainHandItemId ?? ""; // visible weapon (replicated)
+            EnsureCombatant(view, data.Type); // HP bar + death cue (before Spawn, which reads the component)
             view.Spawn(isLocal: false);
             view.Teleport(new Vector3(data.Position.X, data.Position.Y, data.Position.Z), data.Yaw);
+            if (IsTargetableType(data.Type)) AttachHitbox(view, data.Type, data.MonsterId); // controlled hitbox for mira/seleção
 
             _views[data.EntityId] = view;
         }
@@ -63,6 +65,7 @@ namespace Arcane_Aegis.Entities
             EntityView view = CreateView(id, name, EntityType.Player, raceId, classId, genderId, "");
             view.Id = id;
             view.Type = EntityType.Player;
+            EnsureCombatant(view, EntityType.Player); // HP bar + death cue (before Spawn, which reads the component)
             view.Spawn(isLocal: true);
 
             var pv = view as PlayerView;
@@ -222,6 +225,74 @@ namespace Arcane_Aegis.Entities
                 if (d <= bestSq) { bestSq = d; best = v; }
             }
             return best;
+        }
+
+        // ── Combatant composition (F0c) ──
+
+        /// <summary>Adds the <see cref="CombatantVitals"/> component (HP bar + death cue) to a combatant view, so HP +
+        /// death are composed onto ANY view (player/npc/monster/boss/pet) instead of inherited from a base class.
+        /// No-op for non-combatants (nodes/vendors/mounts) and if the prefab already carries one.</summary>
+        private static void EnsureCombatant(EntityView view, EntityType type)
+        {
+            if (!IsTargetableType(type)) return;
+            if (view.GetComponent<CombatantVitals>() == null) view.gameObject.AddComponent<CombatantVitals>();
+        }
+
+        // ── Targeting (F0b) ──
+
+        /// <summary>Anything you can lock onto in combat (a living combatant), vs nodes/vendors (interact, not fight).</summary>
+        public static bool IsTargetableType(EntityType t)
+            => t is EntityType.Player or EntityType.Monster or EntityType.Npc or EntityType.Boss or EntityType.Pet;
+
+        /// <summary>Enemies that Tab cycles through (excludes players/pets so you don't tab onto a friend in PvE).</summary>
+        public static bool IsEnemyType(EntityType t)
+            => t is EntityType.Monster or EntityType.Npc or EntityType.Boss;
+
+        /// <summary>Living targetables within <paramref name="range"/> of <paramref name="center"/> (for Tab-cycling).
+        /// Excludes our own player. <paramref name="enemiesOnly"/> restricts to mobs (the usual Tab behaviour).</summary>
+        public void CollectTargetables(List<EntityView> into, Vector3 center, float range, bool enemiesOnly)
+        {
+            into.Clear();
+            float r2 = range * range;
+            foreach (var v in _views.Values)
+            {
+                if (v == null) continue;
+                if (enemiesOnly ? !IsEnemyType(v.Type) : !IsTargetableType(v.Type)) continue;
+                if (Local != null && v.Id == Local.Id) continue;
+                if (v.SnapHp01 <= 0f) continue; // dead
+                if ((v.transform.position - center).sqrMagnitude <= r2) into.Add(v);
+            }
+        }
+
+        /// <summary>Attaches a controlled trigger capsule (on the <c>Targetable</c> layer) so the entity can be raycast
+        /// for mira/seleção. Size comes from the MonsterDefinitionSO for mobs (scales with the model), else a humanoid
+        /// default. A trigger → never blocks the player's movement.</summary>
+        private void AttachHitbox(EntityView view, EntityType type, string monsterId)
+        {
+            float radius = 0.4f, height = 2f; // humanoid default
+            if ((type == EntityType.Monster || type == EntityType.Boss) && library != null && !string.IsNullOrEmpty(monsterId))
+            {
+                var md = library.GetMonster(monsterId);
+                if (md != null)
+                {
+                    if (md.hitboxRadius > 0f) radius = md.hitboxRadius;
+                    if (md.hitboxHeight > 0f) height = md.hitboxHeight;
+                }
+            }
+
+            var go = new GameObject("Hitbox");
+            go.transform.SetParent(view.transform, false);
+            int layer = LayerMask.NameToLayer("Targetable");
+            if (layer >= 0) go.layer = layer;
+            else Debug.LogWarning("[Entities] layer 'Targetable' não existe — adicione em Project Settings ▸ Tags and Layers.");
+
+            var cap = go.AddComponent<CapsuleCollider>();
+            cap.isTrigger = true;  // never blocks movement; raycast hits it via QueryTriggerInteraction.Collide
+            cap.direction = 1;     // Y axis
+            cap.radius = radius;
+            cap.height = Mathf.Max(height, radius * 2f);
+            cap.center = new Vector3(0f, cap.height * 0.5f, 0f);
+            go.AddComponent<TargetableHitbox>().Bind(view);
         }
     }
 }

@@ -26,6 +26,8 @@ namespace Arcane_Aegis.Content
         public float cooldown = 1f;
         [Tooltip("Mana cost.")] public int cost;
         public TargetingMode targeting = TargetingMode.Single;
+        [Tooltip("Lado do alvo: Enemy = dano/CC (mira inimigos) · Ally = cura/buff/escudo (mira aliados, pode incluir você).")]
+        public TargetSide targetSide = TargetSide.Enemy;
         [Tooltip("Cone/Line length, Circle radius, Single max distance (m).")] public float range = 3.5f;
         [Tooltip("Cone full width (degrees).")] public float coneAngle = 90f;
         [Tooltip("Line width (m).")] public float width = 2f;

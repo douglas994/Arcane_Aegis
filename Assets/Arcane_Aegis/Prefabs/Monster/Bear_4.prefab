@@ -1923,6 +1923,7 @@ GameObject:
   - component: {fileID: 867585940816239287}
   - component: {fileID: 5257796717731452049}
   - component: {fileID: -989439733058128701}
+  - component: {fileID: 3339084750417420113}
   m_Layer: 0
   m_Name: Bear_4
   m_TagString: Untagged
@@ -1983,14 +1984,14 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::Arcane_Aegis.Entities.MonsterView
   Id: 0
   Type: 1
+  DisplayName: 
+  ContentId: 
   WorldOffset: {x: 0, y: 0, z: 0}
   EquippedMainHand: 
   positionSmoothTime: 0.1
   rotationLerp: 12
   speedWindow: 0.25
   characterAnimator: {fileID: 5257796717731452049}
-  vitals: {fileID: -989439733058128701}
-  deathHideDelay: 4
 --- !u!114 &5257796717731452049
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -2009,6 +2010,8 @@ MonoBehaviour:
   groundedParam: Grounded
   attackTrigger: Attack
   deadParam: Dead
+  gatheringParam: Gathering
+  gatherTypeParam: GatherType
   speedDamp: 0.1
   maxSpeed: 7
 --- !u!114 &-989439733058128701
@@ -2026,6 +2029,18 @@ MonoBehaviour:
   bar: {fileID: 0}
   fill: {fileID: 0}
   root: {fileID: 0}
+--- !u!114 &3339084750417420113
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7962199819078159310}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: a1647a1f6c3dc8e4183c74ba51242308, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::Arcane_Aegis.Entities.EntityAnimation
 --- !u!1 &8002475675295336084
 GameObject:
   m_ObjectHideFlags: 0

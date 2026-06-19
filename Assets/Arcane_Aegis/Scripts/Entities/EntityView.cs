@@ -1,4 +1,3 @@
-using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using ArcaneShared.Enums;
@@ -21,6 +20,17 @@ namespace Arcane_Aegis.Entities
         public Vector3 WorldOffset; // continent offset (grid × worldSize) → render server LOCAL coords in GLOBAL space
         public string EquippedMainHand = ""; // replicated main-hand template id (remotes) → WeaponVisual shows the model
 
+        /// <summary>Latest snapshot HP fraction (0..1) for ANY entity — the quantized HpPercent/255. Drives the
+        /// target frame + tab-target "is alive" check + enemy health bars, so it works even for a plain view.</summary>
+        public float SnapHp01 { get; private set; } = 1f;
+
+        private CombatantVitals _combatant; // optional: HP bar + death cue (added by EntityManager to combatants)
+        private EntityAnimation _animHub;   // single hub for trigger animations (attack/cast/death/gather)
+
+        /// <summary>Wired by the <see cref="CombatantVitals"/> component on its Awake (composition over inheritance):
+        /// any view can host the combatant behaviour without being a "Humanoid".</summary>
+        public void AttachCombatant(CombatantVitals combatant) => _combatant = combatant;
+
         [SerializeField] private float positionSmoothTime = 0.1f;
         [SerializeField] private float rotationLerp = 12f;
         [SerializeField] private float speedWindow = 0.25f;
@@ -36,11 +46,14 @@ namespace Arcane_Aegis.Entities
         protected virtual void Awake()
         {
             if (characterAnimator == null) characterAnimator = GetComponentInChildren<CharacterAnimator>();
+            _animHub = EntityAnimation.Of(gameObject);
         }
 
         /// <summary>Applies a snapshot. Base = transform target + anim state + speed. Subclasses extend (HP, …).</summary>
         public virtual void ApplySnapshot(in SnapshotEntry e)
         {
+            SnapHp01 = e.HpPercent / 255f; // any view tracks its last-known HP fraction (used by targeting/UI)
+            if (_combatant != null) _combatant.OnSnapshot(SnapHp01, e.State == MovementState.Dead); // HP bar + death cue
             SetTarget(new Vector3(e.Position.X, e.Position.Y, e.Position.Z), e.Yaw, e.State);
         }
 
@@ -108,47 +121,19 @@ namespace Arcane_Aegis.Entities
             transform.SetPositionAndRotation(_targetPos, Quaternion.Euler(0f, _targetYaw, 0f));
         }
 
-        /// <summary>Plays the attack animation on this entity (driven by S2C_AbilityCast for remotes).</summary>
-        public void PlayAttack()
-        {
-            if (characterAnimator != null) characterAnimator.TriggerAttack();
-        }
+        // Trigger animations route through the single EntityAnimation hub (driven by S2C_AbilityCast / gather packets).
+        /// <summary>Plays the attack animation on this entity.</summary>
+        public void PlayAttack() => _animHub.PlayAttack();
 
-        /// <summary>Plays a SKILL's cast presentation (its own anim + cast VFX) via CombatFx. Falls back to the
-        /// generic attack if CombatFx isn't in the scene. Driven by S2C_AbilityCast for remote casters.</summary>
-        public void PlayCast(int abilityId)
-        {
-            if (Arcane_Aegis.Combat.CombatFx.Instance != null)
-                Arcane_Aegis.Combat.CombatFx.Instance.PlayCast(transform, characterAnimator, abilityId);
-            else if (characterAnimator != null) characterAnimator.TriggerAttack();
-        }
+        /// <summary>Plays a SKILL's cast presentation (its own anim + cast VFX, or the generic attack fallback).</summary>
+        public void PlayCast(int abilityId) => _animHub.PlayCast(abilityId);
 
-        private Coroutine _gatherAnim;
-
-        /// <summary>Plays the gather animation for <paramref name="profession"/> (0 chop / 1 mine / 2 pick / …) while
-        /// harvesting. The server ends it authoritatively (S2C_GatherEnd → <see cref="StopGather"/>); the
-        /// <paramref name="seconds"/> timer here is only a safety net if that packet is ever lost.</summary>
-        public void PlayGather(byte profession, float seconds)
-        {
-            if (characterAnimator == null) return;
-            if (_gatherAnim != null) StopCoroutine(_gatherAnim);
-            characterAnimator.SetGather(true, profession);
-            _gatherAnim = seconds > 0f ? StartCoroutine(EndGatherAfter(seconds + 2f)) : null;
-        }
+        /// <summary>Holds the gather animation for <paramref name="profession"/> (the server ends it authoritatively;
+        /// <paramref name="seconds"/> is only a safety net if that packet is lost).</summary>
+        public void PlayGather(byte profession, float seconds) => _animHub.PlayGather(profession, seconds);
 
         /// <summary>Stops the gather animation now (the server's authoritative end, or a cancel/interrupt).</summary>
-        public void StopGather()
-        {
-            if (_gatherAnim != null) { StopCoroutine(_gatherAnim); _gatherAnim = null; }
-            if (characterAnimator != null) characterAnimator.SetGather(false);
-        }
-
-        private IEnumerator EndGatherAfter(float seconds)
-        {
-            yield return new WaitForSeconds(seconds);
-            if (characterAnimator != null) characterAnimator.SetGather(false);
-            _gatherAnim = null;
-        }
+        public void StopGather() => _animHub.StopGather();
 
         private void Update()
         {
