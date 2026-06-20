@@ -25,11 +25,16 @@ namespace Arcane_Aegis.Entities
         public float SnapHp01 { get; private set; } = 1f;
 
         private CombatantVitals _combatant; // optional: HP bar + death cue (added by EntityManager to combatants)
+        private AiStateIndicator _indicator; // optional: "!"/"Zzz"/"?" cue (added by EntityManager to monsters)
         private EntityAnimation _animHub;   // single hub for trigger animations (attack/cast/death/gather)
 
         /// <summary>Wired by the <see cref="CombatantVitals"/> component on its Awake (composition over inheritance):
         /// any view can host the combatant behaviour without being a "Humanoid".</summary>
         public void AttachCombatant(CombatantVitals combatant) => _combatant = combatant;
+
+        /// <summary>Wired by the <see cref="AiStateIndicator"/> component on its Awake — the view feeds it the
+        /// replicated AI state each snapshot so it can show the matching world cue.</summary>
+        public void AttachIndicator(AiStateIndicator indicator) => _indicator = indicator;
 
         [SerializeField] private float positionSmoothTime = 0.1f;
         [SerializeField] private float rotationLerp = 12f;
@@ -54,6 +59,7 @@ namespace Arcane_Aegis.Entities
         {
             SnapHp01 = e.HpPercent / 255f; // any view tracks its last-known HP fraction (used by targeting/UI)
             if (_combatant != null) _combatant.OnSnapshot(SnapHp01, e.State == MovementState.Dead); // HP bar + death cue
+            if (_indicator != null) _indicator.OnAiState(e.AiState); // "!"/"Zzz"/"?" cue (monsters only)
             SetTarget(new Vector3(e.Position.X, e.Position.Y, e.Position.Z), e.Yaw, e.State);
         }
 

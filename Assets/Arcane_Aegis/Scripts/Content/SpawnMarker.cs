@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using UnityEngine;
 
 namespace Arcane_Aegis.Content
@@ -27,6 +28,10 @@ namespace Arcane_Aegis.Content
         [Tooltip("Multiplicador do elite (≤1 usa o padrão 1.6).")]
         [Min(0f)] public float eliteScale = 1.6f;
 
+        [Header("Patrulha por pontos (opcional — só monstros)")]
+        [Tooltip("Pontos de patrulha (arraste Transforms da cena). O monstro anda entre eles em ordem. Vazio = sem patrulha por pontos.")]
+        public List<Transform> patrolPoints = new();
+
         private void OnDrawGizmos()
         {
             // yellow = vendor, green = resource node, red = monster, grey = empty.
@@ -38,6 +43,20 @@ namespace Arcane_Aegis.Content
             Gizmos.DrawWireSphere(transform.position, Mathf.Max(0.3f, radius));
             Gizmos.color = c;
             Gizmos.DrawSphere(transform.position, 0.4f);
+
+            // Patrol path: line from the spawn through each waypoint (and a marker at each).
+            if (patrolPoints != null && patrolPoints.Count > 0)
+            {
+                Gizmos.color = new Color(0.3f, 0.7f, 1f, 0.9f);
+                Vector3 prev = transform.position;
+                foreach (var pt in patrolPoints)
+                {
+                    if (pt == null) continue;
+                    Gizmos.DrawLine(prev, pt.position);
+                    Gizmos.DrawWireSphere(pt.position, 0.3f);
+                    prev = pt.position;
+                }
+            }
 #if UNITY_EDITOR
             string name = vendor != null ? (string.IsNullOrEmpty(vendor.displayName) ? vendor.name : vendor.displayName)
                         : node != null ? (string.IsNullOrEmpty(node.displayName) ? node.name : node.displayName)

@@ -35,8 +35,13 @@ namespace Arcane_Aegis.Controllers.Locomotion
         public bool Gathering { get; private set; }
         public void SetGathering(bool on) => Gathering = on;
 
-        /// <summary>True while a stun/root/gather forbids horizontal movement.</summary>
-        public bool MoveBlocked => Stunned || Rooted || Gathering;
+        /// <summary>True while the server reports this player dead (HP 0) — locks movement until revived.</summary>
+        public bool IsDead { get; private set; }
+        /// <summary>Driven from the own player's vitals (PlayerView.SetVitals): enters/exits the Dead state.</summary>
+        public void SetDead(bool dead) => IsDead = dead;
+
+        /// <summary>True while death/stun/root/gather forbids horizontal movement.</summary>
+        public bool MoveBlocked => IsDead || Stunned || Rooted || Gathering;
 
         /// <summary>Applies the server's authoritative CC state to the local input (no rubber-band).</summary>
         public void SetControl(bool stunned, bool rooted, float speedMult)
@@ -54,6 +59,8 @@ namespace Arcane_Aegis.Controllers.Locomotion
         public IdleState Idle { get; private set; }
         public LocomotionState Loco { get; private set; }
         public AirborneState Air { get; private set; }
+        public DeadState Dead { get; private set; }
+        public StunnedState Stun { get; private set; }
 
         private bool _jumpQueued;
 
@@ -65,12 +72,21 @@ namespace Arcane_Aegis.Controllers.Locomotion
             Idle = new IdleState(this);
             Loco = new LocomotionState(this);
             Air = new AirborneState(this);
+            Dead = new DeadState(this);
+            Stun = new StunnedState(this);
 
             Current = Idle;
             Current.Enter();
         }
 
-        private void Update() => Current.Tick(Time.deltaTime);
+        private void Update()
+        {
+            // Hard overrides (from combat, mid-jump/run) are forced centrally so each state needn't check them.
+            // Priority: Dead beats Stun beats everything. Each override state handles its own exit when it clears.
+            if (IsDead) { if (Current != Dead) ChangeState(Dead); }
+            else if (Stunned) { if (Current != Stun) ChangeState(Stun); }
+            Current.Tick(Time.deltaTime);
+        }
 
         public void ChangeState(ILocomotionState next)
         {

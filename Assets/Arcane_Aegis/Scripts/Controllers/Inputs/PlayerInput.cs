@@ -6,8 +6,9 @@ namespace Arcane_Aegis.Controllers.Inputs
 {
     /// <summary>
     /// Single input source for the local player, backed by the generated MMO_Inputs actions.
-    /// The locomotion FSM reads <see cref="Move"/> / <see cref="ConsumeJump"/>; the camera reads
-    /// <see cref="Look"/> / <see cref="Zoom"/> / <see cref="RightClick"/>. (Attack/Dash/Interact wired later.)
+    /// The locomotion FSM reads <see cref="Move"/> / <see cref="ConsumeJump"/> / <see cref="DashHeld"/>; the camera
+    /// reads <see cref="Look"/> / <see cref="Zoom"/> / <see cref="RightClick"/>; combat reads <see cref="ConsumeAttack"/>.
+    /// (Interact keys live on each interaction controller — Gather/Seal/Shop — not here.)
     /// </summary>
     public class PlayerInput : MonoBehaviour
     {

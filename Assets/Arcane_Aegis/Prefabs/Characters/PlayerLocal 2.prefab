@@ -1779,6 +1779,7 @@ GameObject:
   - component: {fileID: 3242758048620761163}
   - component: {fileID: -5879357210057163665}
   - component: {fileID: -7594801765373167480}
+  - component: {fileID: -2754686524544525170}
   m_Layer: 0
   m_Name: PlayerLocal 2
   m_TagString: Untagged
@@ -1941,6 +1942,8 @@ MonoBehaviour:
   groundedParam: Grounded
   attackTrigger: Attack
   deadParam: Dead
+  gatheringParam: Gathering
+  gatherTypeParam: GatherType
   speedDamp: 0.1
   maxSpeed: 7
 --- !u!114 &1388933930979981160
@@ -1986,14 +1989,14 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::Arcane_Aegis.Entities.PlayerView
   Id: 0
   Type: 0
+  DisplayName: 
+  ContentId: 
   WorldOffset: {x: 0, y: 0, z: 0}
   EquippedMainHand: 
   positionSmoothTime: 0.1
   rotationLerp: 12
   speedWindow: 0.25
   characterAnimator: {fileID: 3546842684791674434}
-  vitals: {fileID: -5879357210057163665}
-  deathHideDelay: 2
 --- !u!114 &-5879357210057163665
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -2024,7 +2027,19 @@ MonoBehaviour:
   basicAbilityId: 1
   defaultCooldown: 0.3
   input: {fileID: 6430173092718962970}
-  animator: {fileID: 3546842684791674434}
+  targeting: {fileID: 0}
+--- !u!114 &-2754686524544525170
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7531496383920890079}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: a1647a1f6c3dc8e4183c74ba51242308, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::Arcane_Aegis.Entities.EntityAnimation
 --- !u!1 &7622696344009132845
 GameObject:
   m_ObjectHideFlags: 0

@@ -51,6 +51,7 @@ namespace Arcane_Aegis.Entities
             view.WorldOffset = ZoneOffset; // render this continent's locals in global space
             view.EquippedMainHand = data.MainHandItemId ?? ""; // visible weapon (replicated)
             EnsureCombatant(view, data.Type); // HP bar + death cue (before Spawn, which reads the component)
+            EnsureIndicator(view, data.Type); // "!"/"Zzz"/"?" AI-state cue (monsters/bosses)
             view.Spawn(isLocal: false);
             view.Teleport(new Vector3(data.Position.X, data.Position.Y, data.Position.Z), data.Yaw);
             if (IsTargetableType(data.Type)) AttachHitbox(view, data.Type, data.MonsterId); // controlled hitbox for mira/seleção
@@ -240,6 +241,14 @@ namespace Arcane_Aegis.Entities
         {
             if (!IsTargetableType(type)) return;
             if (view.GetComponent<CombatantVitals>() == null) view.gameObject.AddComponent<CombatantVitals>();
+        }
+
+        /// <summary>Adds the <see cref="AiStateIndicator"/> (the "!"/"Zzz"/"?" world cue) to monster/boss views, so the
+        /// server-replicated FSM state is visible. No-op for players/nodes/vendors and if the prefab already has one.</summary>
+        private static void EnsureIndicator(EntityView view, EntityType type)
+        {
+            if (type is not (EntityType.Monster or EntityType.Boss)) return;
+            if (view.GetComponent<AiStateIndicator>() == null) view.gameObject.AddComponent<AiStateIndicator>();
         }
 
         // ── Targeting (F0b) ──

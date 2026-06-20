@@ -1,0 +1,61 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 6cbc3ae838de9fb459833115ff07a89e, type: 3}
+  m_Name: Ice Sword
+  m_EditorClassIdentifier: Assembly-CSharp::Arcane_Aegis.Content.ItemDefinitionSO
+  id: icesword
+  displayName: Ice Sword
+  type: 1
+  category: soword
+  slot: 1
+  twoHanded: 0
+  rarity: 2
+  element: 2
+  levelReq: 1
+  classReq: warrior
+  statsBase:
+  - statId: 1
+    value: 5
+  - statId: 12
+    value: 6
+  rollsPossible:
+  - statId: 12
+    min: 5
+    max: 20
+  - statId: 1
+    min: 10
+    max: 15
+  maxRolls: 1
+  effects: []
+  tierMax: 5
+  enhanceMax: 12
+  socketsMax: 5
+  durabilityMax: 300
+  weight: 20
+  sellable: 1
+  tradeable: 1
+  npcPrice: 70
+  priceCurrency: gold
+  stackMax: 1
+  icon: {fileID: 1817894423, guid: 39601f2209aa2204b949b9f60886246d, type: 3}
+  description: 
+  model3D: {fileID: 5648164778633679083, guid: b99eeca4b92b0b2408bdea5f80af2b65, type: 3}
+  gripAttach:
+    bone: 
+    position: {x: 0, y: 0, z: 0}
+    euler: {x: 0, y: 0, z: 0}
+    scale: {x: 0, y: 0, z: 0}
+  sheathAttach:
+    bone: 
+    position: {x: 0, y: 0, z: 0}
+    euler: {x: 0, y: 0, z: 0}
+    scale: {x: 0, y: 0, z: 0}

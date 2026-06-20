@@ -48,7 +48,7 @@ namespace Arcane_Aegis.EditorTools
             Section("IA — arquétipo + skills");
             P("archetype", "Arquétipo"); P("abilities", "Skills da IA");
             P("fleeHpPct", "Foge abaixo de (% vida)"); P("eliteScale", "Escala Elite");
-            P("patrolRadius", "Raio de ronda (m)");
+            P("patrolRadius", "Raio de ronda (m)"); P("startsAsleep", "Começa dormindo");
 
             Section("Hitbox de mira");
             P("hitboxRadius", "Raio (m)"); P("hitboxHeight", "Altura (m)");

@@ -2921,6 +2921,9 @@ MonoBehaviour:
   count: 3
   radius: 18.6
   respawnSeconds: 15
+  eliteChance: 0
+  eliteScale: 1.6
+  patrolPoints: []
 --- !u!4 &96159614
 Transform:
   m_ObjectHideFlags: 0
@@ -7069,6 +7072,9 @@ MonoBehaviour:
   count: 3
   radius: 18.6
   respawnSeconds: 15
+  eliteChance: 0
+  eliteScale: 1.6
+  patrolPoints: []
 --- !u!4 &274739441
 Transform:
   m_ObjectHideFlags: 0
@@ -20165,6 +20171,59 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 968560880}
   m_CullTransparentMesh: 1
+--- !u!1 &969338723
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 969338725}
+  - component: {fileID: 969338724}
+  m_Layer: 0
+  m_Name: SpawnMarker (3)
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!114 &969338724
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 969338723}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 8ae85705d18cd134b88d28e0232454c0, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::Arcane_Aegis.Content.SpawnMarker
+  monster: {fileID: 11400000, guid: f71c6a52c566ffc40b5221ed5c44bf8f, type: 2}
+  node: {fileID: 0}
+  vendor: {fileID: 0}
+  count: 1
+  radius: 18.6
+  respawnSeconds: 15
+  eliteChance: 1
+  eliteScale: 1.6
+  patrolPoints: []
+--- !u!4 &969338725
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 969338723}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 229.51, y: -0, z: 263.46}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &970670254
 GameObject:
   m_ObjectHideFlags: 0
@@ -24762,6 +24821,9 @@ MonoBehaviour:
   count: 3
   radius: 18.6
   respawnSeconds: 15
+  eliteChance: 0
+  eliteScale: 1.6
+  patrolPoints: []
 --- !u!4 &1198591136
 Transform:
   m_ObjectHideFlags: 0
@@ -42575,6 +42637,7 @@ SceneRoots:
   - {fileID: 1616286340}
   - {fileID: 1340586726}
   - {fileID: 96159614}
+  - {fileID: 969338725}
   - {fileID: 1198591136}
   - {fileID: 274739441}
   - {fileID: 622544295}

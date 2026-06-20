@@ -31,9 +31,21 @@ namespace Arcane_Aegis.Entities
         public uint XpToNext { get; private set; } = 1;
         public float XpFraction => XpToNext > 0 ? Mathf.Clamp01((float)Xp / XpToNext) : 0f;
 
+        private bool _dead;
+
         public void SetVitals(int hp, int maxHp, int mana, int maxMana)
         {
             Hp = hp; MaxHp = maxHp; Mana = mana; MaxMana = maxMana;
+
+            // The server never sends the own player its own snapshot, so the snapshot death path (CombatantVitals)
+            // never fires for the LOCAL player — drive the death anim straight off its exact vitals here.
+            bool dead = maxHp > 0 && hp <= 0;
+            if (dead != _dead)
+            {
+                _dead = dead;
+                EntityAnimation.Of(gameObject).SetDead(dead);
+                if (Locomotion != null) Locomotion.SetDead(dead); // lock movement while dead, unlock on respawn (local only)
+            }
         }
 
         public void SetExperience(ushort level, uint xp, uint xpToNext)

@@ -49,6 +49,8 @@ namespace Arcane_Aegis.Content
         public float eliteScale = 1f;
         [Tooltip("Raio de perambulação ocioso em volta do spawn (m). 0 = fica parado.")]
         public float patrolRadius = 0f;
+        [Tooltip("Começa DORMINDO (emboscada): só acorda se algo chega muito perto ou se apanha; volta a dormir quando se acalma.")]
+        public bool startsAsleep = false;
 
         [Header("Tipo — revela os campos extras (e o que é enviado ao servidor)")]
         [Tooltip("Marque pra virar um BOSS (mostra fases/enrage/anúncio). Desmarcado = monstro comum, campos somem.")]

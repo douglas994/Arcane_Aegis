@@ -288,6 +288,7 @@ namespace Arcane_Aegis.EditorTools
                 FleeHpPct = (byte)Mathf.Clamp(so.fleeHpPct, 0, 100),
                 EliteScale = so.eliteScale <= 0f ? 1f : so.eliteScale,
                 PatrolRadius = Mathf.Max(0f, so.patrolRadius),
+                StartsAsleep = (byte)(so.startsAsleep ? 1 : 0),
                 EnrageSeconds = asBoss ? Mathf.Max(0f, so.enrageSeconds) : 0f,
                 AnnounceGlobal = (byte)(asBoss && so.announceGlobal ? 1 : 0),
                 SealMinLevel = (ushort)(so.isSealed ? Mathf.Clamp(so.sealMinLevel, 0, ushort.MaxValue) : 0),
@@ -596,11 +597,28 @@ namespace Arcane_Aegis.EditorTools
                         ZoneId = (byte)_spawnZone, Kind = kind, MonsterId = contentId,
                         X = pos.x, Z = pos.z, Radius = mk.radius, Count = mk.count, RespawnSeconds = mk.respawnSeconds,
                         EliteChance = kind == 0 ? mk.eliteChance : 0f, EliteScale = mk.eliteScale,
+                        PatrolPath = kind == 0 ? BuildPatrolPath(mk) : "",
                     }
                 });
                 n++;
             }
             _status = markers.Length == 0 ? "Nenhum SpawnMarker na cena." : $"Spawners exportados (zona {_spawnZone}): {n}. Reinicie a zona.";
+        }
+
+        /// <summary>A SpawnMarker's patrol points → "x,z;x,z" GLOBAL coords (empty if none).</summary>
+        private static string BuildPatrolPath(SpawnMarker mk)
+        {
+            if (mk.patrolPoints == null || mk.patrolPoints.Count == 0) return "";
+            var sb = new System.Text.StringBuilder();
+            foreach (var pt in mk.patrolPoints)
+            {
+                if (pt == null) continue;
+                if (sb.Length > 0) sb.Append(';');
+                var p = pt.position;
+                sb.Append(p.x.ToString(System.Globalization.CultureInfo.InvariantCulture)).Append(',')
+                  .Append(p.z.ToString(System.Globalization.CultureInfo.InvariantCulture));
+            }
+            return sb.ToString();
         }
 
         private void DrawCategories()
