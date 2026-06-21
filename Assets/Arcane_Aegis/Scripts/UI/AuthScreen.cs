@@ -110,9 +110,9 @@ namespace Arcane_Aegis.UI
         private static string Message(AuthReason reason) => reason switch
         {
             AuthReason.BadCredentials => "Usuário ou senha incorretos.",
-            AuthReason.UsernameTaken  => "Esse nome de usuário já existe.",
-            AuthReason.EmailTaken     => "Esse email já está cadastrado.",
-            AuthReason.InvalidInput   => "Dados inválidos (usuário 3-20, senha ≥4, email válido).",
+            AuthReason.UsernameTaken  => "Usuário ou e-mail já cadastrado.", // generic (anti-enumeration)
+            AuthReason.EmailTaken     => "Usuário ou e-mail já cadastrado.",
+            AuthReason.InvalidInput   => "Dados inválidos (usuário 3-20, senha ≥8, email válido).",
             AuthReason.Banned         => "Conta banida.",
             _                         => "Erro no servidor. Tente de novo.",
         };

@@ -8,7 +8,7 @@ namespace Arcane_Aegis.Network
     public static class ClientSession
     {
         public static uint AccountId;
-        public static uint Token;
+        public static ulong Token;
         public static byte ServerId;
         public static uint CharacterId; // chosen character (set on select → used to enter the world)
     }

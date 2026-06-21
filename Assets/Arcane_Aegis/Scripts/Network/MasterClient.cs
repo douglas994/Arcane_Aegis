@@ -31,7 +31,7 @@ namespace Arcane_Aegis.Network
         /// <summary>True once the TCP connection to the Master is up.</summary>
         public bool Connected => _server != null;
         /// <summary>Session token from a successful login (0 until then).</summary>
-        public uint Token { get; private set; }
+        public ulong Token { get; private set; }
         public uint AccountId { get; private set; }
         /// <summary>The server/realm the player picked on the select screen (used by the next slices).</summary>
         public byte SelectedServerId { get; set; }
