@@ -69,9 +69,11 @@ namespace Arcane_Aegis.EditorTools
                 P("tierMax"); P("enhanceMax"); P("socketsMax");
             }
 
-            if (Section(equippable ? "Economia" : "Pilha & Economia"))
+            if (Section("Pilha & Economia"))
             {
-                if (!equippable) P("stackMax");
+                P("stackMax");
+                if (equippable)
+                    EditorGUILayout.HelpBox("stackMax > 1 deixa empilhar — mas SÓ itens idênticos se juntam (mesmo tier/refino/durabilidade, sem rolls). Armas diferentes nunca se fundem no mesmo slot.", MessageType.Info);
                 P("weight"); P("sellable"); P("tradeable"); P("npcPrice");
                 CurrencyPopup("priceCurrency");
             }

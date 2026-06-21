@@ -381,6 +381,40 @@ namespace Arcane_Aegis.EditorTools
             Done(holder, "Target Frame (topo-centro) — nome + HP do alvo; cria/liga o TargetingSystem (Tab cicla, clique trava, Esc solta)");
         }
 
+        [MenuItem("ArcaneMMO/UI/Admin Panel")]
+        public static void BuildAdminPanel()
+        {
+            var canvas = GetOrCreateCanvas();
+            var holder = Holder(canvas.transform, "AdminPanel");          // always active (the component runs Update)
+            var admin = holder.AddComponent<AdminPanel>();
+            var window = WindowVisual(holder.transform, new Vector2(440, 250), out var body); // the toggled visual (F8)
+
+            var title = Label(body, "Title", "Admin / GM  (F8)", 18, TextAlignmentOptions.Center); Top(title.rectTransform, 30);
+            var help = Label(body, "Help", "give <item> [n] · spawn <monstro> [n] · tp <x> <z> · setlevel <n> · heal · god · kill", 11, TextAlignmentOptions.Center, new Color(1f, 1f, 1f, 0.5f));
+            var hr = help.rectTransform; hr.anchorMin = new Vector2(0, 1); hr.anchorMax = new Vector2(1, 1); hr.pivot = new Vector2(0.5f, 1); hr.anchoredPosition = new Vector2(0, -42); hr.sizeDelta = new Vector2(-8, 30);
+
+            // command field + send
+            var input = InputField(body, "CommandInput", "comando…  ex: give Ice_Sword 1");
+            var ir = RT(input.gameObject); ir.anchorMin = new Vector2(0, 1); ir.anchorMax = new Vector2(1, 1); ir.pivot = new Vector2(0.5f, 1); ir.anchoredPosition = new Vector2(-60, -84); ir.sizeDelta = new Vector2(-128, 34);
+            var send = Button(body.transform, "Send", "Enviar", new Vector2(110, 34)); var sr = RT(send); sr.anchorMin = new Vector2(1, 1); sr.anchorMax = new Vector2(1, 1); sr.pivot = new Vector2(1, 1); sr.anchoredPosition = new Vector2(0, -84);
+
+            // quick buttons
+            var heal = Button(body.transform, "Heal", "Heal", new Vector2(96, 34)); var hbr = RT(heal); hbr.anchorMin = hbr.anchorMax = new Vector2(0, 0); hbr.pivot = new Vector2(0, 0); hbr.anchoredPosition = new Vector2(0, 12);
+            var god = Button(body.transform, "God", "God", new Vector2(96, 34)); var gbr = RT(god); gbr.anchorMin = gbr.anchorMax = new Vector2(0.5f, 0); gbr.pivot = new Vector2(0.5f, 0); gbr.anchoredPosition = new Vector2(0, 12);
+            var kill = Button(body.transform, "Kill", "Kill", new Vector2(96, 34)); var kbr = RT(kill); kbr.anchorMin = kbr.anchorMax = new Vector2(1, 0); kbr.pivot = new Vector2(1, 0); kbr.anchoredPosition = new Vector2(0, 12);
+
+            var so = new SerializedObject(admin);
+            Set(so, "panelRoot", window);
+            Set(so, "input", input);
+            so.ApplyModifiedProperties();
+
+            AddClick(send, admin, nameof(AdminPanel.Submit));
+            AddClick(heal, admin, nameof(AdminPanel.QuickHeal));
+            AddClick(god, admin, nameof(AdminPanel.QuickGod));
+            AddClick(kill, admin, nameof(AdminPanel.QuickKill));
+            Done(holder, "Admin Panel (F8, só pra conta admin) — campo de comando + Heal/God/Kill");
+        }
+
         [MenuItem("ArcaneMMO/UI/Gather + Craft Bars")]
         public static void BuildBars()
         {

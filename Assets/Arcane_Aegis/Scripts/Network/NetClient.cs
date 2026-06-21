@@ -172,6 +172,14 @@ namespace Arcane_Aegis.Network
             Send(new C2S_InteractSeal { SealId = sealId }, DeliveryMethod.ReliableOrdered);
         }
 
+        /// <summary>Sends a GM/admin command (e.g. "give Ice_Sword 1", "spawn Dragon_Boss"). The SERVER authorizes
+        /// it by the account's admin flag — sending it as a non-admin just gets ignored.</summary>
+        public void SendAdminCommand(string command)
+        {
+            if (!CanSend || string.IsNullOrWhiteSpace(command)) return;
+            Send(new C2S_AdminCommand { Command = command }, DeliveryMethod.ReliableOrdered);
+        }
+
         /// <summary>Asks the server to craft a recipe (server validates profession/ingredients/space + resolves on a timer).</summary>
         public void SendCraft(string recipeId)
         {

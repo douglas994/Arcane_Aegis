@@ -26,6 +26,7 @@ namespace Arcane_Aegis.Network.Handlers
             var p = new S2C_LoginResult();
             p.Deserialize(ref reader);
             if (!p.Success) return;
+            ClientSession.IsAdmin = p.IsAdmin; // server-authoritative admin flag → the GM panel uses it
             var sp = new Vector3(p.SpawnPosition.X, p.SpawnPosition.Y, p.SpawnPosition.Z);
             var offset = new Vector3(p.ZoneOffsetX, 0f, p.ZoneOffsetZ);
 

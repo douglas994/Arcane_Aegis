@@ -11,5 +11,6 @@ namespace Arcane_Aegis.Network
         public static ulong Token;
         public static byte ServerId;
         public static uint CharacterId; // chosen character (set on select → used to enter the world)
+        public static bool IsAdmin;     // server says this account is admin (S2C_LoginResult) → show the GM panel
     }
 }
