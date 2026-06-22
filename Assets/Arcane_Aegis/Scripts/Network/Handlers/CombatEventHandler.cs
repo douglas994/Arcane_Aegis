@@ -40,6 +40,18 @@ namespace Arcane_Aegis.Network.Handlers
             // per-skill impact VFX on the target (damage hits; projectile skills are handled by ProjectileManager).
             if (!heal && CombatFx.Instance != null) CombatFx.Instance.SpawnImpact(p.AbilityId, pos + Vector3.up);
 
+            // hit-react flinch on the victim — monsters + remote players (the local player feels hits via screen shake).
+            if (!heal && p.Amount > 0 && (local == null || p.TargetId != local.Id)
+                && _entities.TryGetView(p.TargetId, out var hv))
+                EntityAnimation.Of(hv.gameObject).PlayHit();
+
+            // camera juice for the LOCAL player: shake when hit, small shake + micro hit-stop when landing a hit.
+            if (!heal && p.Amount > 0 && local != null)
+            {
+                if (p.TargetId == local.Id) CameraShake.Request(crit ? 0.6f : 0.35f);
+                else if (p.SourceId == local.Id) { CameraShake.Request(crit ? 0.30f : 0.15f); CameraShake.Stop(crit ? 0.08f : 0.05f); }
+            }
+
             // a monster that took damage → show/refresh its floating health bar (AoE → many at once).
             if (!heal && EnemyHealthBars.Instance != null
                 && _entities.TryGetView(p.TargetId, out var tv) && tv.Type == EntityType.Monster)

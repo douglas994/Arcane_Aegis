@@ -30,6 +30,12 @@ namespace Arcane_Aegis.Entities
             if (Anim != null) Anim.TriggerAttack();
         }
 
+        /// <summary>A brief flinch when this entity takes damage (no-op if the controller has no "Hit" trigger).</summary>
+        public void PlayHit()
+        {
+            if (Anim != null) Anim.TriggerHit();
+        }
+
         /// <summary>A skill's cast presentation (its own anim + cast VFX via CombatFx); falls back to the generic attack.</summary>
         public void PlayCast(int abilityId)
         {

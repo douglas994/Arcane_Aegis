@@ -2,7 +2,9 @@ using NetworkLibrary.Serialization;
 using ArcaneShared.Enums;
 using ArcaneShared.Protocol.ServerToClient;
 using Arcane_Aegis.Combat;
+using Arcane_Aegis.Content;
 using Arcane_Aegis.Entities;
+using Arcane_Aegis.UI;
 
 namespace Arcane_Aegis.Network.Handlers
 {
@@ -35,6 +37,12 @@ namespace Arcane_Aegis.Network.Handlers
 
             if (isOwn)
             {
+                // own cast with a wind-up → show the HUD cast bar (name + icon from the skill def).
+                if (p.CastMs > 0 && CastBar.Instance != null)
+                {
+                    var def = ContentLibrary.Active != null ? ContentLibrary.Active.GetSkill(p.AbilityId) : null;
+                    CastBar.Instance.Show(def != null ? def.displayName : null, p.CastMs / 1000f, def != null ? def.icon : null);
+                }
                 // own cast confirmed → authoritative cooldown (we already predicted the anim/VFX locally)
                 if (local.Combat != null) local.Combat.OnServerCooldown(p.AbilityId, p.CooldownMs / 1000f);
             }

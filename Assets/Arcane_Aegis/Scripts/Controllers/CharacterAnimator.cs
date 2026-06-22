@@ -23,6 +23,7 @@ namespace Arcane_Aegis.Controllers
         [SerializeField] private string speedParam = "Speed";
         [SerializeField] private string groundedParam = "Grounded";
         [SerializeField] private string attackTrigger = "Attack";
+        [SerializeField] private string hitTrigger = "Hit"; // brief flinch on taking damage
         [SerializeField] private string deadParam = "Dead";
         [SerializeField] private string gatheringParam = "Gathering"; // bool: true while harvesting
         [SerializeField] private string gatherTypeParam = "GatherType"; // int: which action (= Profession byte: 0 chop, 1 mine, …)
@@ -35,8 +36,8 @@ namespace Arcane_Aegis.Controllers
         /// <summary>Horizontal speed (m/s) for REMOTES, set by EntityView from snapshot positions. Ignored if an FSM is assigned.</summary>
         public float SourceSpeed { get; set; }
 
-        private int _speedHash, _groundedHash, _attackHash, _deadHash, _gatheringHash, _gatherTypeHash;
-        private bool _hasSpeed, _hasGrounded, _hasAttack, _hasDead, _hasGathering, _hasGatherType;
+        private int _speedHash, _groundedHash, _attackHash, _hitHash, _deadHash, _gatheringHash, _gatherTypeHash;
+        private bool _hasSpeed, _hasGrounded, _hasAttack, _hasHit, _hasDead, _hasGathering, _hasGatherType;
 
         private void Start()
         {
@@ -50,6 +51,8 @@ namespace Arcane_Aegis.Controllers
                 _hasGrounded = HasParam(groundedParam);
                 _attackHash = Animator.StringToHash(attackTrigger);
                 _hasAttack = HasParam(attackTrigger);
+                _hitHash = Animator.StringToHash(hitTrigger);
+                _hasHit = HasParam(hitTrigger);
                 _deadHash = Animator.StringToHash(deadParam);
                 _hasDead = HasParam(deadParam);
                 _gatheringHash = Animator.StringToHash(gatheringParam);
@@ -91,6 +94,12 @@ namespace Arcane_Aegis.Controllers
         public void TriggerAttack()
         {
             if (animator != null && _hasAttack) animator.SetTrigger(_attackHash);
+        }
+
+        /// <summary>Fires a brief flinch when the entity takes damage (no-op if the controller has no "Hit" trigger).</summary>
+        public void TriggerHit()
+        {
+            if (animator != null && _hasHit) animator.SetTrigger(_hitHash);
         }
 
         /// <summary>Fires a named trigger (a skill's own animTrigger). Falls back to the generic attack if the

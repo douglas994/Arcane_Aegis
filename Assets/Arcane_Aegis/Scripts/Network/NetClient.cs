@@ -43,6 +43,10 @@ namespace Arcane_Aegis.Network
         /// <summary>Raised once connected + handshaked (so the lobby screen can request data only when ready).</summary>
         public event Action OnConnectedToServer;
 
+        /// <summary>Raised when the connection to the zone drops (kick/ban/timeout/network loss). In-world this means the
+        /// session ended — the DisconnectScreen freezes the game + shows a notice. Fired on the main thread (Update pump).</summary>
+        public event Action<DisconnectReason> OnDisconnectedFromServer;
+
         // Character-lobby events (raised on the main thread by the handlers).
         public event Action<CreationOption[], CreationOption[], CreationOption[]> OnCreationData; // (races, classes, genders)
         public event Action<CharacterSummary[]> OnCharacterList;
@@ -95,6 +99,7 @@ namespace Arcane_Aegis.Network
             router.Register(new StateUpdateHandler(entities));
             router.Register(new AbilityCastHandler(entities));
             router.Register(new CombatEventHandler(entities));
+            router.Register(new StatusEffectsHandler(entities));
             router.Register(new CreationDataHandler((races, classes, genders) => OnCreationData?.Invoke(races, classes, genders)));
             router.Register(new CharacterListHandler(chars => OnCharacterList?.Invoke(chars)));
             router.Register(new CharacterCreateResultHandler(result => OnCharacterCreateResult?.Invoke(result)));
@@ -423,6 +428,7 @@ namespace Arcane_Aegis.Network
         {
             _server = null;
             Debug.Log($"[NetClient] disconnected: {reason}");
+            OnDisconnectedFromServer?.Invoke(reason);
         }
 
         private void OnReceive(BitBuffer reader) => _router.Route(ref reader);

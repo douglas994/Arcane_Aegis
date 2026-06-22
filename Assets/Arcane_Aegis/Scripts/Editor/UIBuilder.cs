@@ -415,6 +415,95 @@ namespace Arcane_Aegis.EditorTools
             Done(holder, "Admin Panel (F8, só pra conta admin) — campo de comando + Heal/God/Kill");
         }
 
+        [MenuItem("ArcaneMMO/UI/Disconnect Screen")]
+        public static void BuildDisconnectScreen()
+        {
+            var canvas = GetOrCreateCanvas();
+            var holder = Holder(canvas.transform, "DisconnectScreen"); // always active (the component subscribes to NetClient)
+            var comp = holder.AddComponent<DisconnectScreen>();
+
+            // full-screen dim overlay (panelRoot) — the component hides it in Start, shows it on disconnect
+            var overlay = Panel(holder.transform, "Overlay", Vector2.zero, new Color(0f, 0f, 0f, 0.85f)); Stretch(RT(overlay));
+
+            var win = Panel(overlay.transform, "Window", new Vector2(460, 200), Bg);
+            var wr = RT(win); wr.anchorMin = wr.anchorMax = new Vector2(0.5f, 0.5f); wr.pivot = new Vector2(0.5f, 0.5f); wr.anchoredPosition = Vector2.zero;
+
+            var title = Label(win, "Title", "Desconectado", 22, TextAlignmentOptions.Center); Top(title.rectTransform, 40);
+            var msg = Label(win, "Message", "Você foi desconectado do servidor.", 15, TextAlignmentOptions.Center, new Color(1f, 1f, 1f, 0.8f));
+            var mr = msg.rectTransform; mr.anchorMin = new Vector2(0, 0.5f); mr.anchorMax = new Vector2(1, 0.5f); mr.pivot = new Vector2(0.5f, 0.5f); mr.anchoredPosition = new Vector2(0, 6); mr.sizeDelta = new Vector2(-24, 50);
+
+            var back = Button(win.transform, "Back", "Voltar ao login", new Vector2(200, 40));
+            var br = RT(back); br.anchorMin = br.anchorMax = new Vector2(0.5f, 0); br.pivot = new Vector2(0.5f, 0); br.anchoredPosition = new Vector2(0, 18);
+
+            var so = new SerializedObject(comp);
+            Set(so, "panelRoot", overlay);
+            Set(so, "messageText", msg);
+            so.ApplyModifiedProperties();
+
+            AddClick(back, comp, nameof(DisconnectScreen.BackToLogin));
+            Done(holder, "Disconnect Screen — overlay + mensagem + 'Voltar ao login' (some no Start, aparece ao cair a conexão)");
+        }
+
+        [MenuItem("ArcaneMMO/UI/Status Bar (buffs)")]
+        public static void BuildStatusBar()
+        {
+            var canvas = GetOrCreateCanvas();
+            var holder = Holder(canvas.transform, "StatusBar");
+            var comp = holder.AddComponent<StatusBar>();
+
+            var container = New("Container", holder.transform); var crt = RT(container);
+            crt.anchorMin = new Vector2(0, 1); crt.anchorMax = new Vector2(0, 1); crt.pivot = new Vector2(0, 1);
+            crt.anchoredPosition = new Vector2(16, -16); crt.sizeDelta = new Vector2(420, 44);
+            var hlg = container.AddComponent<HorizontalLayoutGroup>();
+            hlg.spacing = 4; hlg.childAlignment = TextAnchor.UpperLeft;
+            hlg.childControlWidth = false; hlg.childControlHeight = false; hlg.childForceExpandWidth = false; hlg.childForceExpandHeight = false;
+
+            // one slot template (icon + radial time overlay + stack count)
+            var slot = Panel(container.transform, "Slot", new Vector2(40, 40), new Color(0f, 0f, 0f, 0.5f));
+            var sc = slot.AddComponent<StatusSlot>();
+            var iconGo = Img(slot.transform, "Icon", Vector2.zero); var irt = RT(iconGo); Stretch(irt); irt.offsetMin = new Vector2(2, 2); irt.offsetMax = new Vector2(-2, -2);
+            var fillGo = Img(slot.transform, "Fill", Vector2.zero); Stretch(RT(fillGo));
+            var fimg = fillGo.GetComponent<Image>(); fimg.color = new Color(0f, 0f, 0f, 0.55f); fimg.type = Image.Type.Filled; fimg.fillMethod = Image.FillMethod.Radial360; fimg.fillOrigin = (int)Image.Origin360.Top; fimg.fillClockwise = false; fimg.fillAmount = 1f;
+            var stacks = Label(slot, "Stacks", "", 12, TextAlignmentOptions.BottomRight); Stretch(stacks.rectTransform);
+
+            var sso = new SerializedObject(sc);
+            Set(sso, "icon", iconGo.GetComponent<Image>());
+            Set(sso, "fill", fimg);
+            Set(sso, "stacks", stacks);
+            sso.ApplyModifiedProperties();
+
+            var so = new SerializedObject(comp);
+            Set(so, "container", container.transform);
+            Set(so, "slotTemplate", sc);
+            so.ApplyModifiedProperties();
+            Done(holder, "Status Bar — ícones de buff/debuff (radial = tempo; some quando vazio). Reestilize o Slot à vontade.");
+        }
+
+        [MenuItem("ArcaneMMO/UI/Cast Bar")]
+        public static void BuildCastBar()
+        {
+            var canvas = GetOrCreateCanvas();
+            var holder = Holder(canvas.transform, "CastBar");
+            var comp = holder.AddComponent<CastBar>();
+
+            var bar = Panel(holder.transform, "Bar", new Vector2(340, 30), Bg);
+            var brt = RT(bar); brt.anchorMin = brt.anchorMax = new Vector2(0.5f, 0f); brt.pivot = new Vector2(0.5f, 0f); brt.anchoredPosition = new Vector2(0, 170);
+
+            var fillGo = Img(bar.transform, "Fill", Vector2.zero); var frt = RT(fillGo); Stretch(frt); frt.offsetMin = new Vector2(2, 2); frt.offsetMax = new Vector2(-2, -2);
+            var fill = fillGo.GetComponent<Image>(); fill.color = new Color(0.55f, 0.45f, 0.95f, 1f); fill.type = Image.Type.Filled; fill.fillMethod = Image.FillMethod.Horizontal; fill.fillAmount = 0f;
+
+            var iconGo = Img(bar.transform, "Icon", new Vector2(26, 26)); var irt = RT(iconGo); irt.anchorMin = irt.anchorMax = new Vector2(0, 0.5f); irt.pivot = new Vector2(0, 0.5f); irt.anchoredPosition = new Vector2(4, 0);
+            var label = Label(bar, "Label", "Conjurando…", 14, TextAlignmentOptions.Center); Stretch(label.rectTransform);
+
+            var so = new SerializedObject(comp);
+            Set(so, "panelRoot", bar);
+            Set(so, "fill", fill);
+            Set(so, "label", label);
+            Set(so, "icon", iconGo.GetComponent<Image>());
+            so.ApplyModifiedProperties();
+            Done(holder, "Cast Bar — barra de conjuração do próprio cast (some quando não conjura)");
+        }
+
         [MenuItem("ArcaneMMO/UI/Gather + Craft Bars")]
         public static void BuildBars()
         {
