@@ -29,6 +29,10 @@ namespace Arcane_Aegis.Controllers.Inputs
         public bool RightClick { get; private set; }
         /// <summary>True while Dash (Left Shift) is held — faster movement. Default movement is a jog/run.</summary>
         public bool DashHeld { get; private set; }
+        /// <summary>True while Space is held — a flying mount ASCENDS (no effect on foot/ground mounts).</summary>
+        public bool AscendHeld { get; private set; }
+        /// <summary>True while Left Ctrl is held — a flying mount DESCENDS.</summary>
+        public bool DescendHeld { get; private set; }
 
         private void Awake() => _actions = new MMO_Inputs();
 
@@ -58,11 +62,16 @@ namespace Arcane_Aegis.Controllers.Inputs
             {
                 Move = Vector2.zero;
                 DashHeld = false;
+                AscendHeld = DescendHeld = false;
                 return;
             }
 
             Move = _actions.Player.Move.ReadValue<Vector2>();
             DashHeld = _actions.Player.Dash.IsPressed();
+            // Flying-mount altitude (read straight off the keyboard via the new Input System — no extra actions needed).
+            var kb = Keyboard.current;
+            AscendHeld = kb != null && kb.spaceKey.isPressed;
+            DescendHeld = kb != null && kb.leftCtrlKey.isPressed;
 
             if (_actions.Player.Jump.WasPressedThisFrame()) _jumpLatched = true;
             if (_actions.Player.Attack.WasPressedThisFrame()) _attackLatched = true;

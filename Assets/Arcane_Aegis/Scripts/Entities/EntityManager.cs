@@ -1,10 +1,13 @@
 using System.Collections.Generic;
 using UnityEngine;
+using KinematicCharacterController;
 using ArcaneShared.Enums;
 using ArcaneShared.Models;
 using ArcaneShared.Protocol.ServerToClient;
 using Arcane_Aegis.Network;
 using Arcane_Aegis.Content;
+using Arcane_Aegis.Controllers;
+using Arcane_Aegis.Controllers.Locomotion;
 
 namespace Arcane_Aegis.Entities
 {
@@ -57,6 +60,25 @@ namespace Arcane_Aegis.Entities
             if (IsTargetableType(data.Type)) AttachHitbox(view, data.Type, data.MonsterId); // controlled hitbox for mira/seleção
 
             _views[data.EntityId] = view;
+
+            // Seat riders on mounts (remote). A mount carries its rider id; either side can arrive first.
+            if (data.Type == EntityType.Mount && view is MountView mv) { mv.RiderId = data.RiderId; TrySeatMountRider(mv); }
+            else if (data.Type == EntityType.Player)
+                foreach (var kv in _views)
+                    if (kv.Value is MountView m && m.RiderId == data.EntityId) TrySeatMountRider(m);
+        }
+
+        /// <summary>Parents a remote rider onto its mount's seat (interpolation off → it moves with the mount). No-op
+        /// until both the mount and the rider exist.</summary>
+        private void TrySeatMountRider(MountView mount)
+        {
+            if (mount.RiderId == 0 || !_views.TryGetValue(mount.RiderId, out var rider)) return;
+            var mc = mount.GetComponentInChildren<MountController>(true);
+            Transform seat = mc != null ? mc.RiderSeat : (FindDeepChild(mount.transform, "RiderSeat") ?? mount.transform);
+            rider.SetInterpolated(false); // the mount drives the rider's transform now (snapshot still updates anim)
+            rider.transform.SetParent(seat, worldPositionStays: false);
+            rider.transform.localPosition = Vector3.zero;
+            rider.transform.localRotation = Quaternion.identity;
         }
 
         /// <summary>Spawns OUR own player at the SERVER-given spawn point (NetClient calls this on login).</summary>
@@ -88,6 +110,14 @@ namespace Arcane_Aegis.Entities
         {
             if (!_views.TryGetValue(id, out var view)) return;
             if (Local != null && Local.Id == id) Local = null;
+
+            // A mount leaving → unseat its rider (back to snapshot interpolation, off the mount).
+            if (view is MountView mv && mv.RiderId != 0 && _views.TryGetValue(mv.RiderId, out var rider) && rider != null)
+            {
+                rider.transform.SetParent(null, worldPositionStays: true);
+                rider.SetInterpolated(true);
+            }
+
             Destroy(view.gameObject);
             _views.Remove(id);
         }
@@ -140,6 +170,30 @@ namespace Arcane_Aegis.Entities
 
         private EntityView CreateView(ushort id, string name, EntityType type, string raceId, string classId, string genderId, string monsterId)
         {
+            // Mounts use a full RIG prefab (KCC + MountController + seat). Here we build the REMOTE copy: the snapshot
+            // drives it, so the controller/motor/sender are turned OFF (the local rider's mount is spawned by MountSession).
+            if (type == EntityType.Mount)
+            {
+                var md = library != null ? library.GetMount(monsterId) : null;
+                GameObject rig = md != null ? md.mountPrefab : null;
+                GameObject mgo;
+                if (rig != null)
+                {
+                    mgo = Instantiate(rig);
+                    foreach (var mc in mgo.GetComponentsInChildren<MountController>(true)) mc.enabled = false;
+                    foreach (var mo in mgo.GetComponentsInChildren<KinematicCharacterMotor>(true)) mo.enabled = false;
+                    foreach (var s in mgo.GetComponentsInChildren<MovementSender>(true)) s.enabled = false;
+                }
+                else
+                {
+                    mgo = GameObject.CreatePrimitive(PrimitiveType.Capsule); // no rig authored on the MountDefinition → placeholder
+                }
+                mgo.name = $"Entity_{id}_{name}";
+                EntityView mv = mgo.GetComponent<EntityView>() ?? mgo.AddComponent<MountView>();
+                mv.ContentId = monsterId ?? "";
+                return mv;
+            }
+
             GameObject prefab = PrefabFor(type);
             GameObject model = (library != null && !string.IsNullOrEmpty(raceId)) ? library.ResolveModel(raceId, classId, genderId) : null;
             // Monsters / resource nodes: resolve the model from the content definition by the replicated id (no capsule).
@@ -148,6 +202,7 @@ namespace Arcane_Aegis.Entities
                 if (type == EntityType.ResourceNode) { var nd = library.GetResourceNode(monsterId); if (nd != null && nd.model3D != null) model = nd.model3D; }
                 else if (type == EntityType.Vendor) { var vd = library.GetVendor(monsterId); if (vd != null && vd.model3D != null) model = vd.model3D; }
                 else if (type == EntityType.Seal) { var md = library.GetMonster(monsterId); if (md != null && md.sealModel3D != null) model = md.sealModel3D; } // seal altar art
+                else if (type == EntityType.Pet) { var pd = library.GetPet(monsterId); if (pd != null && pd.model3D != null) model = pd.model3D; } // pet model from PetDefinition
                 else { var md = library.GetMonster(monsterId); if (md != null && md.model3D != null) model = md.model3D; }
             }
 
@@ -168,7 +223,12 @@ namespace Arcane_Aegis.Entities
             go.name = $"Entity_{id}_{name}";
 
             EntityView view = go.GetComponent<EntityView>();
-            if (view == null) view = type == EntityType.Player ? go.AddComponent<PlayerView>() : go.AddComponent<EntityView>(); // players need the control stack; nodes/mobs just need a view
+            if (view == null) view = type switch // players need the control stack; pets/mounts get their own thin views; nodes/mobs a plain view
+            {
+                EntityType.Player => go.AddComponent<PlayerView>(),
+                EntityType.Pet => go.AddComponent<PetView>(),
+                _ => go.AddComponent<EntityView>(), // Mount handled earlier (rig prefab)
+            };
             view.ContentId = monsterId ?? ""; // replicated def id (monster/node/vendor) — used to resolve vendor shop, etc.
             return view;
         }
@@ -207,7 +267,7 @@ namespace Arcane_Aegis.Entities
                     if (typePrefabs[i].type == type && typePrefabs[i].prefab != null)
                         return typePrefabs[i].prefab;
             // Monsters/nodes/seals fall back to "model IS the entity" (no player-prefab capsule) unless a dedicated prefab is set.
-            return type is EntityType.Monster or EntityType.ResourceNode or EntityType.Vendor or EntityType.Seal ? null : characterPrefab;
+            return type is EntityType.Monster or EntityType.ResourceNode or EntityType.Vendor or EntityType.Seal or EntityType.Pet or EntityType.Mount ? null : characterPrefab;
         }
 
         /// <summary>Nearest resource node within <paramref name="range"/> of a world position (for "press to gather").</summary>

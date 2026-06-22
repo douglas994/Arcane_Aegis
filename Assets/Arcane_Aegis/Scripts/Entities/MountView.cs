@@ -6,5 +6,8 @@ namespace Arcane_Aegis.Entities
     /// </summary>
     public class MountView : EntityView
     {
+        /// <summary>The entity id of the rider sitting on this mount (from S2C_SpawnEntity.RiderId; 0 = none).
+        /// The EntityManager uses it to parent the rider onto the mount's seat.</summary>
+        public ushort RiderId;
     }
 }

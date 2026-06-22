@@ -100,6 +100,8 @@ namespace Arcane_Aegis.Network
             router.Register(new AbilityCastHandler(entities));
             router.Register(new CombatEventHandler(entities));
             router.Register(new StatusEffectsHandler(entities));
+            router.Register(new MountStateHandler(entities));
+            router.Register(new OwnedCompanionsHandler());
             router.Register(new CreationDataHandler((races, classes, genders) => OnCreationData?.Invoke(races, classes, genders)));
             router.Register(new CharacterListHandler(chars => OnCharacterList?.Invoke(chars)));
             router.Register(new CharacterCreateResultHandler(result => OnCharacterCreateResult?.Invoke(result)));
@@ -183,6 +185,27 @@ namespace Arcane_Aegis.Network
         {
             if (!CanSend || string.IsNullOrWhiteSpace(command)) return;
             Send(new C2S_AdminCommand { Command = command }, DeliveryMethod.ReliableOrdered);
+        }
+
+        /// <summary>HUD button: toggle the active pet (summon/store).</summary>
+        public void SendTogglePet()
+        {
+            if (!CanSend) return;
+            Send(new C2S_TogglePet(), DeliveryMethod.ReliableOrdered);
+        }
+
+        /// <summary>HUD button: toggle the active mount (mount/dismount).</summary>
+        public void SendToggleMount()
+        {
+            if (!CanSend) return;
+            Send(new C2S_ToggleMount(), DeliveryMethod.ReliableOrdered);
+        }
+
+        /// <summary>Collection panel: set the active pet/mount (kind 0 = pet, 1 = mount).</summary>
+        public void SendSetActiveCompanion(byte kind, string defId)
+        {
+            if (!CanSend || string.IsNullOrEmpty(defId)) return;
+            Send(new C2S_SetActiveCompanion { Kind = kind, DefId = defId }, DeliveryMethod.ReliableOrdered);
         }
 
         /// <summary>Asks the server to craft a recipe (server validates profession/ingredients/space + resolves on a timer).</summary>

@@ -18,7 +18,8 @@ namespace Arcane_Aegis.Content
 
         [Header("Client art — NOT synced (resolvido por id no client)")]
         public Sprite icon;
-        public GameObject model3D;
+        [Tooltip("Prefab COMPLETO da montaria (raiz com KinematicCharacterMotor + MountController + collider + filho 'RiderSeat' + 'Target' p/ câmera + o modelo). Usado tanto pelo dono (controlável) quanto por remotos (interpolado).")]
+        public GameObject mountPrefab;
         [TextArea] public string description;
     }
 }

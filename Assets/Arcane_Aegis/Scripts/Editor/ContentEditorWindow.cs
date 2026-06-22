@@ -533,6 +533,8 @@ namespace Arcane_Aegis.EditorTools
             lib.recipes = new List<RecipeDefinitionSO>(FindAllOf<RecipeDefinitionSO>());
             lib.currencies = new List<CurrencyDefinitionSO>(FindAllOf<CurrencyDefinitionSO>());
             lib.vendors = new List<VendorDefinitionSO>(FindAllOf<VendorDefinitionSO>());
+            lib.pets = new List<PetDefinitionSO>(FindAllOf<PetDefinitionSO>());
+            lib.mounts = new List<MountDefinitionSO>(FindAllOf<MountDefinitionSO>());
             EditorUtility.SetDirty(lib);
             AssetDatabase.SaveAssets();
             _status = $"ContentLibrary: {lib.classes.Count} classes, {lib.races.Count} raças, {lib.genders.Count} gêneros, {lib.templates.Count} templates, {lib.items.Count} itens, {lib.skills.Count} skills, {lib.statuses.Count} status, {lib.monsters.Count} monstros.";

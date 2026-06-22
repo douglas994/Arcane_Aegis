@@ -31,6 +31,10 @@ namespace Arcane_Aegis.Controllers.Locomotion
         public bool Rooted { get; private set; }
         /// <summary>Move-speed multiplier (1 = normal, &lt;1 = slowed).</summary>
         public float SpeedMult { get; private set; } = 1f;
+        /// <summary>Mount speed multiplier (1 = on foot, &gt;1 = mounted). Combined with <see cref="SpeedMult"/>.</summary>
+        public float MountMult { get; private set; } = 1f;
+        /// <summary>Set from S2C_MountState: 1 = on foot, the mount's speedMult while riding.</summary>
+        public void SetMount(float mult) => MountMult = mult > 0f ? mult : 1f;
         /// <summary>True while harvesting a resource node (locks movement like a root).</summary>
         public bool Gathering { get; private set; }
         public void SetGathering(bool on) => Gathering = on;
@@ -53,7 +57,7 @@ namespace Arcane_Aegis.Controllers.Locomotion
         /// <summary>True while Dash (Shift) is held.</summary>
         public bool Dashing => Input != null && Input.DashHeld;
         /// <summary>Ground move speed: jog by default, dash while Shift is held (scaled by any slow).</summary>
-        public float CurrentSpeed => (Dashing ? DashSpeed : RunSpeed) * SpeedMult;
+        public float CurrentSpeed => (Dashing ? DashSpeed : RunSpeed) * SpeedMult * MountMult;
 
         public ILocomotionState Current { get; private set; }
         public IdleState Idle { get; private set; }

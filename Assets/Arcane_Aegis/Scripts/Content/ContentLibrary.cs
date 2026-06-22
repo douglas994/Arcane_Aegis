@@ -29,6 +29,8 @@ namespace Arcane_Aegis.Content
         public List<RecipeDefinitionSO> recipes = new();
         public List<CurrencyDefinitionSO> currencies = new();
         public List<VendorDefinitionSO> vendors = new();
+        public List<PetDefinitionSO> pets = new();
+        public List<MountDefinitionSO> mounts = new();
 
         public ClassDefinitionSO GetClass(string id) => classes.Find(c => c != null && c.id == id);
         public RaceDefinitionSO GetRace(string id) => races.Find(r => r != null && r.id == id);
@@ -42,6 +44,8 @@ namespace Arcane_Aegis.Content
         public RecipeDefinitionSO GetRecipe(string id) => recipes.Find(r => r != null && r.id == id);
         public CurrencyDefinitionSO GetCurrency(string id) => currencies.Find(c => c != null && c.id == id);
         public VendorDefinitionSO GetVendor(string id) => vendors.Find(v => v != null && v.id == id);
+        public PetDefinitionSO GetPet(string id) => pets.Find(p => p != null && p.id == id);       // pet model/icon by id
+        public MountDefinitionSO GetMount(string id) => mounts.Find(m => m != null && m.id == id);  // mount model/icon by id
 
         /// <summary>The 3D model for a character's look: the CharacterTemplate matched by race+class, then that
         /// gender's model. Falls back to same-race (any class), then any template with a model. Null if none.

@@ -479,6 +479,62 @@ namespace Arcane_Aegis.EditorTools
             Done(holder, "Status Bar — ícones de buff/debuff (radial = tempo; some quando vazio). Reestilize o Slot à vontade.");
         }
 
+        [MenuItem("ArcaneMMO/UI/Collection Panel (pets+mounts)")]
+        public static void BuildCollectionPanel()
+        {
+            var canvas = GetOrCreateCanvas();
+            var holder = Holder(canvas.transform, "CollectionPanel");
+            var comp = holder.AddComponent<CollectionPanel>();
+            var window = WindowVisual(holder.transform, new Vector2(440, 360), out var body);
+            AddToggle(holder, window, Key.K); // K toggles the collection
+
+            var title = Label(body, "Title", "Coleção — Pets & Montarias (K)", 16, TextAlignmentOptions.Center); Top(title.rectTransform, 26);
+
+            var list = New("List", body); var crt = RT(list);
+            crt.anchorMin = new Vector2(0, 0); crt.anchorMax = new Vector2(1, 1); crt.offsetMin = new Vector2(6, 6); crt.offsetMax = new Vector2(-6, -34);
+            var vlg = list.AddComponent<VerticalLayoutGroup>();
+            vlg.spacing = 4; vlg.childControlHeight = false; vlg.childControlWidth = true; vlg.childForceExpandHeight = false; vlg.childForceExpandWidth = true; vlg.padding = new RectOffset(2, 2, 2, 2);
+
+            // one row template (icon + name + active badge + Ativar)
+            var row = Panel(list.transform, "Row", new Vector2(0, 40), BgSoft);
+            var le = row.AddComponent<LayoutElement>(); le.preferredHeight = 40; le.minHeight = 40;
+            var rc = row.AddComponent<CollectionRow>();
+            var iconGo = Img(row.transform, "Icon", new Vector2(32, 32)); var irt = RT(iconGo); irt.anchorMin = irt.anchorMax = new Vector2(0, 0.5f); irt.pivot = new Vector2(0, 0.5f); irt.anchoredPosition = new Vector2(6, 0);
+            var nameLbl = Label(row, "Name", "name", 13, TextAlignmentOptions.Left); var nrt = nameLbl.rectTransform; nrt.anchorMin = new Vector2(0, 0); nrt.anchorMax = new Vector2(1, 1); nrt.offsetMin = new Vector2(44, 0); nrt.offsetMax = new Vector2(-156, 0);
+            var badge = Label(row, "Active", "ativo", 11, TextAlignmentOptions.Center, new Color(0.5f, 1f, 0.5f)); var brt = badge.rectTransform; brt.anchorMin = brt.anchorMax = new Vector2(1, 0.5f); brt.pivot = new Vector2(1, 0.5f); brt.anchoredPosition = new Vector2(-90, 0); brt.sizeDelta = new Vector2(48, 20);
+            var setBtn = Button(row.transform, "SetActive", "Ativar", new Vector2(78, 28)); var sbrt = RT(setBtn); sbrt.anchorMin = sbrt.anchorMax = new Vector2(1, 0.5f); sbrt.pivot = new Vector2(1, 0.5f); sbrt.anchoredPosition = new Vector2(-6, 0);
+
+            var rso = new SerializedObject(rc);
+            Set(rso, "icon", iconGo.GetComponent<Image>());
+            Set(rso, "label", nameLbl);
+            Set(rso, "activeBadge", badge.gameObject);
+            Set(rso, "setActiveBtn", setBtn.GetComponent<Button>());
+            rso.ApplyModifiedProperties();
+
+            var so = new SerializedObject(comp);
+            Set(so, "container", list.transform);
+            Set(so, "rowTemplate", rc);
+            so.ApplyModifiedProperties();
+            Done(holder, "Collection Panel (K) — pets/montarias possuídos + Ativar. Reestilize o Row à vontade.");
+        }
+
+        [MenuItem("ArcaneMMO/UI/Companion HUD (pet+mount)")]
+        public static void BuildCompanionHud()
+        {
+            var canvas = GetOrCreateCanvas();
+            var holder = Holder(canvas.transform, "CompanionHud");
+            var comp = holder.AddComponent<CompanionHud>();
+
+            var pet = Button(holder.transform, "PetBtn", "Pet", new Vector2(60, 48));
+            var pr = RT(pet); pr.anchorMin = pr.anchorMax = new Vector2(1, 0); pr.pivot = new Vector2(1, 0); pr.anchoredPosition = new Vector2(-12, 210);
+            var mount = Button(holder.transform, "MountBtn", "Mount", new Vector2(60, 48));
+            var mr = RT(mount); mr.anchorMin = mr.anchorMax = new Vector2(1, 0); mr.pivot = new Vector2(1, 0); mr.anchoredPosition = new Vector2(-80, 210);
+
+            AddClick(pet, comp, nameof(CompanionHud.TogglePet));
+            AddClick(mount, comp, nameof(CompanionHud.ToggleMount));
+            Done(holder, "Companion HUD — botões Pet + Mount (toggle). Reestilize/reposicione à vontade.");
+        }
+
         [MenuItem("ArcaneMMO/UI/Cast Bar")]
         public static void BuildCastBar()
         {
