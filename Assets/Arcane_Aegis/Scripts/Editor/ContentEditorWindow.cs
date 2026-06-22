@@ -126,6 +126,8 @@ namespace Arcane_Aegis.EditorTools
                 new() { Name = "Currencies", Icon = "💰", SoType = typeof(CurrencyDefinitionSO), Folder = "Currencies", ToContent = null },
                 // Vendors: authored as SOs; synced to the TYPED Vendor table (see SyncAll).
                 new() { Name = "Vendors", Icon = "🏪", SoType = typeof(VendorDefinitionSO), Folder = "Vendors", ToContent = null },
+                new() { Name = "Pets", Icon = "P", SoType = typeof(PetDefinitionSO), Folder = "Pets", ToContent = null },
+                new() { Name = "Mounts", Icon = "M", SoType = typeof(MountDefinitionSO), Folder = "Mounts", ToContent = null },
             };
         }
 
@@ -212,7 +214,15 @@ namespace Arcane_Aegis.EditorTools
             foreach (var so in FindAllOf<VendorDefinitionSO>())
                 if (!string.IsNullOrWhiteSpace(so.id)) { Send(new I_Db_UpsertVendor { Vendor = ToVendorRecord(so) }); vendors++; }
 
-            _status = $"Mirror ✓ — {items} item(ns) + {races.Length}r/{classes.Length}c/{genders.Length}g + {skills} skill(s) + {statuses} status(es) + {monsters} monstro(s) + {nodes} nó(s) + {recipes} receita(s) + {currencies} moeda(s) + {vendors} vendedor(es).";
+            // Pets + Mounts → the TYPED Pet/Mount tables.
+            int pets = 0;
+            foreach (var so in FindAllOf<PetDefinitionSO>())
+                if (!string.IsNullOrWhiteSpace(so.id)) { Send(new I_Db_UpsertPet { Pet = ToPetRecord(so) }); pets++; }
+            int mounts = 0;
+            foreach (var so in FindAllOf<MountDefinitionSO>())
+                if (!string.IsNullOrWhiteSpace(so.id)) { Send(new I_Db_UpsertMount { Mount = ToMountRecord(so) }); mounts++; }
+
+            _status = $"Mirror ✓ — {items} item(ns) + {races.Length}r/{classes.Length}c/{genders.Length}g + {skills} skill(s) + {statuses} status(es) + {monsters} monstro(s) + {nodes} nó(s) + {recipes} receita(s) + {currencies} moeda(s) + {vendors} vendedor(es) + {pets} pet(s) + {mounts} montaria(s).";
         }
 
         /// <summary>ItemDefinitionSO → the server's ItemTemplate. The SO uses the shared enums directly (no parsing);
@@ -382,6 +392,39 @@ namespace Arcane_Aegis.EditorTools
         private static CurrencyRecord ToCurrencyRecord(CurrencyDefinitionSO so) => new()
         {
             Id = so.id, Name = so.displayName ?? "", Icon = so.icon != null ? so.icon.name : "", SortOrder = so.sortOrder,
+        };
+
+        /// <summary>PetDefinitionSO → PetRecord (abilities emit their skill ids; rarity/element as bytes).</summary>
+        private static PetRecord ToPetRecord(PetDefinitionSO so)
+        {
+            var ids = new System.Collections.Generic.List<byte>();
+            if (so.abilities != null)
+                foreach (var sk in so.abilities)
+                {
+                    if (sk == null) continue;
+                    byte id = (byte)Mathf.Clamp(sk.id, 1, 255);
+                    if (!ids.Contains(id)) ids.Add(id);
+                }
+            return new PetRecord
+            {
+                Id = so.id, Name = so.displayName ?? "",
+                Rarity = (byte)so.rarity, Element = (byte)so.element,
+                Level = (ushort)Mathf.Clamp(so.level, 1, ushort.MaxValue),
+                Str = so.str, Dex = so.dex, Int = so.intel, Vit = so.vit, Spi = so.spi, Luk = so.luk, Armor = so.armor,
+                MaxHp = Mathf.Max(0, so.maxHp),
+                Archetype = (byte)so.archetype,
+                AttackRange = so.attackRange, MoveSpeed = so.moveSpeed, FollowRange = so.followRange,
+                AbilityIds = ids.ToArray(),
+            };
+        }
+
+        /// <summary>MountDefinitionSO → MountRecord.</summary>
+        private static MountRecord ToMountRecord(MountDefinitionSO so) => new()
+        {
+            Id = so.id, Name = so.displayName ?? "",
+            Rarity = (byte)so.rarity, Element = (byte)so.element,
+            SpeedMult = so.speedMult <= 0f ? 1f : so.speedMult,
+            MountTimeSeconds = Mathf.Max(0f, so.mountTimeSeconds),
         };
 
         /// <summary>VendorDefinitionSO → VendorRecord (stock emits each item's template id).</summary>
