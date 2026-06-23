@@ -28,20 +28,16 @@ namespace Arcane_Aegis.EditorTools
                 var mc = root.AddComponent<MountController>();
                 var kcm = root.GetComponent<KinematicCharacterMotor>();
                 if (kcm != null) kcm.enabled = false; // the runtime enables it for the local rider; disabled avoids a null-controller NRE
-                var sender = root.AddComponent<MovementSender>();
-                root.AddComponent<MountView>();
+                root.AddComponent<MountView>(); // snapshot interpolation for remotes (the player's MovementSender reports the local rig)
 
                 // Children: seat (where the player sits), camera target, and a holder for the visual model.
                 Transform seat = NewChild(root.transform, "RiderSeat", new Vector3(0f, 1.2f, 0f));
                 Transform target = NewChild(root.transform, "Target", new Vector3(0f, 1.6f, -0.2f));
                 NewChild(root.transform, "Model", Vector3.zero); // ← drop the 3D model under here
 
-                // Wire the controller's refs (public) + the sender's mount source (private serialized).
+                // Wire the controller's refs.
                 mc.riderSeat = seat;
                 mc.cameraTarget = target;
-                var so = new SerializedObject(sender);
-                var mountProp = so.FindProperty("mount");
-                if (mountProp != null) { mountProp.objectReferenceValue = mc; so.ApplyModifiedProperties(); }
 
                 EnsureFolder(Dir);
                 string path = AssetDatabase.GenerateUniqueAssetPath(Dir + "/Mount_New.prefab");

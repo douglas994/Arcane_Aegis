@@ -83,7 +83,9 @@ namespace Arcane_Aegis.Controllers.Combat
             _readyAt[abilityId] = Time.time + dur;
 
             ushort targetId = targeting != null ? targeting.CurrentTargetId : (ushort)0;
-            _net.SendCast(abilityId, targetId);              // locked/aimed target id (0 = action aim → server uses our facing)
+            // GroundAoE skills carry a ground aim point (cursor → ground); other modes use facing/target.
+            Vector3 aim = (so != null && so.targeting == ArcaneShared.Enums.TargetingMode.GroundAoE) ? GroundAimPoint() : default;
+            _net.SendCast(abilityId, targetId, aim);         // locked/aimed target id (0 = action aim → server uses our facing)
             if (_self != null) Arcane_Aegis.Combat.CombatStance.Mark(_self.Id); // draw the weapon on the swing (instant, no round-trip wait)
             _anim.PlayCast(abilityId); // predicted presentation: skill anim + cast VFX (or generic attack fallback)
             return true;
@@ -112,6 +114,25 @@ namespace Arcane_Aegis.Controllers.Combat
             if (rem <= 0f) return 0f;
             float dur = _cdDuration.TryGetValue(abilityId, out var d) && d > 0f ? d : defaultCooldown;
             return Mathf.Clamp01(rem / dur);
+        }
+
+        /// <summary>Ground point under the cursor for a GroundAoE cast (raycast → physics hit, else the caster's ground
+        /// plane). World coords — the server validates the placement distance. (A persistent reticle/preview is optional polish.)</summary>
+        private Vector3 GroundAimPoint()
+        {
+            var cam = Camera.main; var mouse = Mouse.current;
+            if (cam != null && mouse != null)
+            {
+                Ray ray = cam.ScreenPointToRay(mouse.position.ReadValue());
+                if (Physics.Raycast(ray, out var hit, 200f)) return hit.point;
+                float y = transform.position.y; // fallback: intersect the caster's ground plane
+                if (Mathf.Abs(ray.direction.y) > 1e-3f)
+                {
+                    float t = (y - ray.origin.y) / ray.direction.y;
+                    if (t > 0f) return ray.origin + ray.direction * t;
+                }
+            }
+            return transform.position;
         }
 
         private static bool IsPointerOverUI()

@@ -15,6 +15,7 @@ namespace Arcane_Aegis.Content
         [Tooltip("Tema/afinidade (cosmético por ora).")] public ElementType element = ElementType.None;
         [Tooltip("Multiplicador de velocidade ao montar (ex.: 1.6 = +60%).")] public float speedMult = 1.6f;
         [Tooltip("Tempo (s) pra montar (0 = instantâneo).")] public float mountTimeSeconds = 1f;
+        [Tooltip("Montaria voadora: servidor libera voar sobre água/abismo + o MountController usa modo voo (Espaço sobe / Ctrl desce).")] public bool canFly = false;
 
         [Header("Client art — NOT synced (resolvido por id no client)")]
         public Sprite icon;

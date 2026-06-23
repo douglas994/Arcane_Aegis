@@ -34,6 +34,8 @@ namespace Arcane_Aegis.Content
         public ElementType element = ElementType.None;
         [Tooltip("Arma exigida pra castar: vazio = nenhuma, 'any' = qualquer arma, ou a Category de arma (ex.: 'swords').")]
         public string requiredWeapon = "";
+        [Tooltip("Se ligado, tomar dano durante o wind-up NÃO cancela o cast (ex.: skills 'channeling' fortes/instantâneas não se importam).")]
+        public bool uninterruptible = false;
 
         [Space]
         public List<Effect> effects = new();

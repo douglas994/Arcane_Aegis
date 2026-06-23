@@ -27,6 +27,7 @@ namespace Arcane_Aegis.Controllers
         [SerializeField] private string deadParam = "Dead";
         [SerializeField] private string gatheringParam = "Gathering"; // bool: true while harvesting
         [SerializeField] private string gatherTypeParam = "GatherType"; // int: which action (= Profession byte: 0 chop, 1 mine, …)
+        [SerializeField] private string mountedParam = "Mounted"; // bool: true while riding a mount (sit pose) — author as an Any-State transition
         [SerializeField] private float speedDamp = 0.1f;
         [SerializeField] private float maxSpeed = 7f; // = DashSpeed; normalizes Speed to 0..1 (idle 0, run ~0.5, dash 1)
 
@@ -36,8 +37,12 @@ namespace Arcane_Aegis.Controllers
         /// <summary>Horizontal speed (m/s) for REMOTES, set by EntityView from snapshot positions. Ignored if an FSM is assigned.</summary>
         public float SourceSpeed { get; set; }
 
-        private int _speedHash, _groundedHash, _attackHash, _hitHash, _deadHash, _gatheringHash, _gatherTypeHash;
-        private bool _hasSpeed, _hasGrounded, _hasAttack, _hasHit, _hasDead, _hasGathering, _hasGatherType;
+        private int _speedHash, _groundedHash, _attackHash, _hitHash, _deadHash, _gatheringHash, _gatherTypeHash, _mountedHash;
+        private bool _hasSpeed, _hasGrounded, _hasAttack, _hasHit, _hasDead, _hasGathering, _hasGatherType, _hasMounted;
+
+        // Last requested bool states — remembered so a setter called BEFORE Start (e.g. seated on the same frame the
+        // view re-spawns when re-entering AoI) still applies once the params are cached.
+        private bool _mounted, _dead;
 
         private void Start()
         {
@@ -59,6 +64,12 @@ namespace Arcane_Aegis.Controllers
                 _hasGathering = HasParam(gatheringParam);
                 _gatherTypeHash = Animator.StringToHash(gatherTypeParam);
                 _hasGatherType = HasParam(gatherTypeParam);
+                _mountedHash = Animator.StringToHash(mountedParam);
+                _hasMounted = HasParam(mountedParam);
+
+                // Re-apply any bool state requested before the params were cached (spawn-then-seat in one frame).
+                if (_hasMounted) animator.SetBool(_mountedHash, _mounted);
+                if (_hasDead) animator.SetBool(_deadHash, _dead);
             }
         }
 
@@ -114,7 +125,16 @@ namespace Arcane_Aegis.Controllers
         /// <summary>Sets the Dead bool so the controller plays/exits the death animation (no-op if absent).</summary>
         public void SetDead(bool dead)
         {
+            _dead = dead; // remembered → re-applied in Start if the params aren't cached yet
             if (animator != null && _hasDead) animator.SetBool(_deadHash, dead);
+        }
+
+        /// <summary>Sets the Mounted bool so the rider plays a sitting pose while on a mount (no-op if absent).
+        /// Author the "Mounted" state as an Any-State transition so it dominates locomotion while true.</summary>
+        public void SetMounted(bool mounted)
+        {
+            _mounted = mounted; // remembered → re-applied in Start if the params aren't cached yet (spawn-then-seat)
+            if (animator != null && _hasMounted) animator.SetBool(_mountedHash, mounted);
         }
 
         /// <summary>Drives the gather animation: <paramref name="gatherType"/> picks the action (= Profession byte:

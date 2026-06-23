@@ -28,6 +28,11 @@ namespace Arcane_Aegis.Content
         public float moveSpeed = 4f;
         [Tooltip("Quão perto ele fica do dono ao seguir (m).")] public float followRange = 4f;
 
+        [Header("Utilitário (enquanto o pet está fora)")]
+        [Tooltip("Aura passiva: stat que o pet concede ao DONO (None = sem aura).")] public StatId auraStat = StatId.None;
+        [Tooltip("Quanto do auraStat a aura concede.")] public int auraAmount = 0;
+        [Tooltip("Bônus de % na chance de drop dos abates do dono (loot-find).")] public float lootFindPct = 0f;
+
         [Header("Client art — NOT synced (resolvido por id no client)")]
         public Sprite icon;
         public GameObject model3D;

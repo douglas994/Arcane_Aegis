@@ -49,6 +49,12 @@ namespace Arcane_Aegis.Entities
             if (Anim != null) Anim.SetDead(dead);
         }
 
+        /// <summary>Sitting pose while riding a mount (set on mount, cleared on dismount — local + remote riders).</summary>
+        public void SetMounted(bool mounted)
+        {
+            if (Anim != null) Anim.SetMounted(mounted);
+        }
+
         /// <summary>Hold the gather loop for a profession (0 chop / 1 mine / …). The server ends it authoritatively;
         /// the <paramref name="seconds"/> timer is only a safety net if that packet is lost.</summary>
         public void PlayGather(byte profession, float seconds)

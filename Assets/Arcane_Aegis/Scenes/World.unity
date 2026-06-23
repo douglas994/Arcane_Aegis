@@ -6638,6 +6638,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::Arcane_Aegis.Controllers.MountSession
   entities: {fileID: 238500057}
+  mountedCameraDistance: 6
 --- !u!1 &239065510
 GameObject:
   m_ObjectHideFlags: 0

@@ -1,5 +1,6 @@
 using UnityEngine;
 using KinematicCharacterController;
+using Arcane_Aegis.Controllers;
 using Arcane_Aegis.Controllers.Inputs;
 using ArcaneShared.Enums;
 
@@ -27,6 +28,8 @@ namespace Arcane_Aegis.Controllers.Locomotion
         public float groundSpeed = 6f;
         public float gravity = 25f;
         public float rotationSharpness = 12f;
+        [Tooltip("Rampa de aceleração/desaceleração horizontal (m/s²) — maior = arranca/para mais rápido.")]
+        public float acceleration = 24f;
 
         [Header("Voo")]
         [Tooltip("Se marcado, a montaria voa: sem gravidade, Espaço sobe / Ctrl desce.")]
@@ -38,6 +41,7 @@ namespace Arcane_Aegis.Controllers.Locomotion
 
         private PlayerInput _input;
         private Transform _cam;
+        private CharacterAnimator _anim; // the mount model's animator (driven locally on the rider's rig)
         private Vector3 _planarVel;     // last horizontal velocity (for the NetState / anim)
         private float _verticalVel;     // gravity (ground) or ascend/descend (fly)
         private bool _active;           // true only on the LOCAL rider's mount
@@ -47,6 +51,9 @@ namespace Arcane_Aegis.Controllers.Locomotion
             if (Motor == null) Motor = GetComponent<KinematicCharacterMotor>();
             if (riderSeat == null) riderSeat = FindChild(transform, "RiderSeat");
             if (cameraTarget == null) cameraTarget = FindChild(transform, "Target") ?? transform;
+            // Cache the MOUNT model's animator NOW, before any rider is parented under us (else GetComponentInChildren
+            // could grab the rider's animator instead).
+            _anim = GetComponentInChildren<CharacterAnimator>(true);
         }
 
         /// <summary>The transform the rider is parented to (the seat), or the root as a fallback.</summary>
@@ -59,8 +66,17 @@ namespace Arcane_Aegis.Controllers.Locomotion
         {
             _input = input;
             _active = true;
+            if (_anim != null) _anim.UseNetworkSource(); // we push State/SourceSpeed below (no FSM on a mount); cached in Awake
             if (Motor != null) { Motor.CharacterController = this; Motor.enabled = true; }
             enabled = true;
+        }
+
+        // Feed the mount model's animator locally (remotes are driven by the EntityView from snapshots instead).
+        private void Update()
+        {
+            if (!_active || _anim == null) return;
+            _anim.State = NetState;
+            _anim.SourceSpeed = _planarVel.magnitude; // horizontal speed → Idle/Walk/Run blend
         }
 
         /// <summary>Movement state for the network sender (so the mount's anim/snapshot reads moving vs idle).</summary>
@@ -73,18 +89,21 @@ namespace Arcane_Aegis.Controllers.Locomotion
             if (!_active || _input == null) { currentVelocity = Vector3.zero; return; }
 
             Vector3 dir = MoveDirection();          // camera-relative, XZ, magnitude 0..1
+            Vector3 targetPlanar;
             if (canFly)
             {
-                _planarVel = dir * flySpeed;
+                targetPlanar = dir * flySpeed;
                 float up = (_input.AscendHeld ? 1f : 0f) - (_input.DescendHeld ? 1f : 0f);
-                _verticalVel = up * ascendSpeed;
+                _verticalVel = up * ascendSpeed; // flying: direct vertical control (no inertia)
             }
             else
             {
-                _planarVel = dir * groundSpeed;
+                targetPlanar = dir * groundSpeed;
                 if (Motor.GroundingStatus.IsStableOnGround) _verticalVel = 0f;
                 else _verticalVel -= gravity * deltaTime; // fall
             }
+            // Ramp horizontal velocity for a natural start/stop instead of snapping to full speed.
+            _planarVel = Vector3.MoveTowards(_planarVel, targetPlanar, acceleration * deltaTime);
             currentVelocity = new Vector3(_planarVel.x, _verticalVel, _planarVel.z);
         }
 

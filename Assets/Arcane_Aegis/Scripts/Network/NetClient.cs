@@ -98,6 +98,7 @@ namespace Arcane_Aegis.Network
             router.Register(new SnapshotHandler(entities));
             router.Register(new StateUpdateHandler(entities));
             router.Register(new AbilityCastHandler(entities));
+            router.Register(new AbilityCancelHandler(entities));
             router.Register(new CombatEventHandler(entities));
             router.Register(new StatusEffectsHandler(entities));
             router.Register(new MountStateHandler(entities));
@@ -158,11 +159,12 @@ namespace Arcane_Aegis.Network
             }, DeliveryMethod.Sequenced);
         }
 
-        /// <summary>Asks the server to cast an ability (PlayerCombat decides WHEN; server validates + resolves).</summary>
-        public void SendCast(byte abilityId, ushort targetId)
+        /// <summary>Asks the server to cast an ability (PlayerCombat decides WHEN; server validates + resolves).
+        /// <paramref name="aim"/> is the ground point for GroundAoE skills (world coords; server validates range).</summary>
+        public void SendCast(byte abilityId, ushort targetId, Vector3 aim = default)
         {
             if (!CanSend) return;
-            Send(new C2S_CastAbility { AbilityId = abilityId, TargetId = targetId }, DeliveryMethod.ReliableOrdered);
+            Send(new C2S_CastAbility { AbilityId = abilityId, TargetId = targetId, AimPoint = new ArcaneShared.Models.NetVector3(aim.x, aim.y, aim.z) }, DeliveryMethod.ReliableOrdered);
         }
 
         /// <summary>Asks the server to harvest a resource node (server validates range/tool/charges + resolves).</summary>
@@ -206,6 +208,13 @@ namespace Arcane_Aegis.Network
         {
             if (!CanSend || string.IsNullOrEmpty(defId)) return;
             Send(new C2S_SetActiveCompanion { Kind = kind, DefId = defId }, DeliveryMethod.ReliableOrdered);
+        }
+
+        /// <summary>Set the active combat pet's engage stance (0 = aggressive, 1 = defensive, 2 = passive).</summary>
+        public void SendPetStance(byte stance)
+        {
+            if (!CanSend) return;
+            Send(new C2S_SetPetStance { Stance = stance }, DeliveryMethod.ReliableOrdered);
         }
 
         /// <summary>Asks the server to craft a recipe (server validates profession/ingredients/space + resolves on a timer).</summary>

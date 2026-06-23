@@ -79,6 +79,7 @@ namespace Arcane_Aegis.Entities
             rider.transform.SetParent(seat, worldPositionStays: false);
             rider.transform.localPosition = Vector3.zero;
             rider.transform.localRotation = Quaternion.identity;
+            EntityAnimation.Of(rider.gameObject).SetMounted(true); // sitting pose
         }
 
         /// <summary>Spawns OUR own player at the SERVER-given spawn point (NetClient calls this on login).</summary>
@@ -114,6 +115,7 @@ namespace Arcane_Aegis.Entities
             // A mount leaving → unseat its rider (back to snapshot interpolation, off the mount).
             if (view is MountView mv && mv.RiderId != 0 && _views.TryGetValue(mv.RiderId, out var rider) && rider != null)
             {
+                EntityAnimation.Of(rider.gameObject).SetMounted(false);
                 rider.transform.SetParent(null, worldPositionStays: true);
                 rider.SetInterpolated(true);
             }

@@ -269,6 +269,7 @@ namespace Arcane_Aegis.EditorTools
                 Targeting = (byte)so.targeting, TargetSide = (byte)so.targetSide, Range = so.range, ConeAngle = so.coneAngle, Width = so.width,
                 Element = (byte)so.element,
                 RequiredWeapon = so.requiredWeapon ?? "",
+                Uninterruptible = (byte)(so.uninterruptible ? 1 : 0),
                 Effects = effects.ToArray(),
             };
         }
@@ -415,6 +416,7 @@ namespace Arcane_Aegis.EditorTools
                 Archetype = (byte)so.archetype,
                 AttackRange = so.attackRange, MoveSpeed = so.moveSpeed, FollowRange = so.followRange,
                 AbilityIds = ids.ToArray(),
+                AuraStat = (byte)so.auraStat, AuraAmount = so.auraAmount, LootFindPct = so.lootFindPct,
             };
         }
 
@@ -425,6 +427,7 @@ namespace Arcane_Aegis.EditorTools
             Rarity = (byte)so.rarity, Element = (byte)so.element,
             SpeedMult = so.speedMult <= 0f ? 1f : so.speedMult,
             MountTimeSeconds = Mathf.Max(0f, so.mountTimeSeconds),
+            CanFly = (byte)(so.canFly ? 1 : 0),
         };
 
         /// <summary>VendorDefinitionSO → VendorRecord (stock emits each item's template id).</summary>
