@@ -15,5 +15,4 @@ MonoBehaviour:
   id: female
   displayName: Female
   icon: {fileID: 0}
-  modelPrefab: {fileID: 0}
   description: 

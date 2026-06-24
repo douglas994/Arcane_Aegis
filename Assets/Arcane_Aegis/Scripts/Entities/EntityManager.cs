@@ -196,6 +196,25 @@ namespace Arcane_Aegis.Entities
                 return mv;
             }
 
+            // Ground loot: a floating item lying in the world. Uses an optional drop prefab (typePrefabs) or the item's
+            // own model; falls back to a billboard icon built by ItemDropView. Resolved by the item template id (monsterId).
+            if (type == EntityType.ItemDrop)
+            {
+                var def = library != null ? library.GetItem(monsterId) : null;
+                GameObject dropPrefab = PrefabFor(EntityType.ItemDrop);
+                GameObject dgo;
+                bool usedItemModel = false; // true only when the drop body IS the item's own 3D model
+                if (dropPrefab != null) dgo = Instantiate(dropPrefab);                       // styled chest/box prefab
+                else if (def != null && def.model3D != null) { dgo = Instantiate(def.model3D); usedItemModel = true; }
+                else { dgo = new GameObject("Drop"); }                                       // pure billboard fallback
+                dgo.name = $"Drop_{id}_{name}";
+                EntityView dv = dgo.GetComponent<EntityView>() ?? dgo.AddComponent<ItemDropView>();
+                dv.ContentId = monsterId ?? "";
+                bool bareFallback = dropPrefab == null && !usedItemModel; // no prefab AND no model → the sprite icon IS the visual
+                (dv as ItemDropView)?.Configure(def, name, showIcon: bareFallback); // chest/model → just the name (proximity); bare → float the icon
+                return dv;
+            }
+
             GameObject prefab = PrefabFor(type);
             GameObject model = (library != null && !string.IsNullOrEmpty(raceId)) ? library.ResolveModel(raceId, classId, genderId) : null;
             // Monsters / resource nodes: resolve the model from the content definition by the replicated id (no capsule).
@@ -269,7 +288,7 @@ namespace Arcane_Aegis.Entities
                     if (typePrefabs[i].type == type && typePrefabs[i].prefab != null)
                         return typePrefabs[i].prefab;
             // Monsters/nodes/seals fall back to "model IS the entity" (no player-prefab capsule) unless a dedicated prefab is set.
-            return type is EntityType.Monster or EntityType.ResourceNode or EntityType.Vendor or EntityType.Seal or EntityType.Pet or EntityType.Mount ? null : characterPrefab;
+            return type is EntityType.Monster or EntityType.ResourceNode or EntityType.Vendor or EntityType.Seal or EntityType.Pet or EntityType.Mount or EntityType.ItemDrop ? null : characterPrefab;
         }
 
         /// <summary>Nearest resource node within <paramref name="range"/> of a world position (for "press to gather").</summary>
@@ -280,6 +299,9 @@ namespace Arcane_Aegis.Entities
 
         /// <summary>Nearest vendor within <paramref name="range"/> of a world position (for "press to shop").</summary>
         public EntityView NearestVendor(Vector3 worldPos, float range) => Nearest(worldPos, range, EntityType.Vendor);
+
+        /// <summary>Nearest ground-loot drop within <paramref name="range"/> of a world position (for auto/keypress pickup).</summary>
+        public EntityView NearestItemDrop(Vector3 worldPos, float range) => Nearest(worldPos, range, EntityType.ItemDrop);
 
         private EntityView Nearest(Vector3 worldPos, float range, EntityType type)
         {

@@ -535,6 +535,36 @@ namespace Arcane_Aegis.EditorTools
             Done(holder, "Companion HUD — botões Pet + Mount (toggle). Reestilize/reposicione à vontade.");
         }
 
+        [MenuItem("ArcaneMMO/UI/Pet HUD (level+xp)")]
+        public static void BuildPetHud()
+        {
+            var canvas = GetOrCreateCanvas();
+            var holder = Holder(canvas.transform, "PetHud");
+            var comp = holder.AddComponent<PetHud>();
+
+            // Toggled visual: a small frame bottom-right, above the Companion HUD buttons. PetHud hides it when no pet is out.
+            var window = Panel(holder.transform, "Window", new Vector2(220, 56), Bg);
+            var rt = RT(window); rt.anchorMin = rt.anchorMax = new Vector2(1, 0); rt.pivot = new Vector2(1, 0); rt.anchoredPosition = new Vector2(-12, 270);
+
+            var name = Label(window, "Name", "Pet", 14, TextAlignmentOptions.Left);
+            var nr = name.rectTransform; nr.anchorMin = new Vector2(0, 1); nr.anchorMax = new Vector2(1, 1); nr.pivot = new Vector2(0, 1); nr.anchoredPosition = new Vector2(8, -4); nr.sizeDelta = new Vector2(-70, 22);
+            var level = Label(window, "Level", "Nv 1", 14, TextAlignmentOptions.Right);
+            var lr = level.rectTransform; lr.anchorMin = new Vector2(1, 1); lr.anchorMax = new Vector2(1, 1); lr.pivot = new Vector2(1, 1); lr.anchoredPosition = new Vector2(-8, -4); lr.sizeDelta = new Vector2(64, 22);
+
+            var barBg = Img(window.transform, "XpBarBG", Vector2.zero); var brt = RT(barBg); brt.anchorMin = new Vector2(0, 0); brt.anchorMax = new Vector2(1, 0); brt.pivot = new Vector2(0.5f, 0); brt.anchoredPosition = new Vector2(0, 8); brt.sizeDelta = new Vector2(-16, 16); barBg.GetComponent<Image>().color = new Color(0, 0, 0, 0.4f);
+            var fillGo = Img(barBg.transform, "Fill", Vector2.zero); Stretch(RT(fillGo)); var fill = fillGo.GetComponent<Image>(); fill.color = new Color(0.55f, 0.45f, 0.95f, 1f); fill.type = Image.Type.Filled; fill.fillMethod = Image.FillMethod.Horizontal; fill.fillAmount = 0f;
+            var xp = Label(barBg, "Xp", "0 / 0", 11, TextAlignmentOptions.Center); Stretch(xp.rectTransform);
+
+            var so = new SerializedObject(comp);
+            Set(so, "root", window);
+            Set(so, "nameLabel", name);
+            Set(so, "levelLabel", level);
+            Set(so, "xpFill", fill);
+            Set(so, "xpLabel", xp);
+            so.ApplyModifiedProperties();
+            Done(holder, "Pet HUD (canto inf. dir.) — nome + nível + barra de XP do pet; some quando não há pet. Reestilize à vontade.");
+        }
+
         [MenuItem("ArcaneMMO/UI/Cast Bar")]
         public static void BuildCastBar()
         {

@@ -1,0 +1,38 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: a0b901990ac87b0488428fea33d9746c, type: 3}
+  m_Name: Dragon Blue
+  m_EditorClassIdentifier: Assembly-CSharp::Arcane_Aegis.Content.PetDefinitionSO
+  id: dragonblue
+  displayName: Dragon Blue
+  rarity: 3
+  element: 2
+  level: 1
+  str: 4
+  dex: 4
+  intel: 1
+  vit: 5
+  spi: 3
+  luk: 3
+  armor: 8
+  maxHp: 300
+  archetype: 1
+  abilities: []
+  attackRange: 2.5
+  moveSpeed: 6
+  followRange: 4
+  auraStat: 12
+  auraAmount: 20
+  lootFindPct: 2
+  icon: {fileID: 599272692, guid: 39601f2209aa2204b949b9f60886246d, type: 3}
+  model3D: {fileID: 1351277843346816, guid: 3007b720ead2bd0499229e5f7f81e36a, type: 3}
+  description: 

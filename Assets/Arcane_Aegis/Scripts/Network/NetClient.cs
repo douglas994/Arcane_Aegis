@@ -103,6 +103,7 @@ namespace Arcane_Aegis.Network
             router.Register(new StatusEffectsHandler(entities));
             router.Register(new MountStateHandler(entities));
             router.Register(new OwnedCompanionsHandler());
+            router.Register(new PetStateHandler());
             router.Register(new CreationDataHandler((races, classes, genders) => OnCreationData?.Invoke(races, classes, genders)));
             router.Register(new CharacterListHandler(chars => OnCharacterList?.Invoke(chars)));
             router.Register(new CharacterCreateResultHandler(result => OnCharacterCreateResult?.Invoke(result)));
@@ -172,6 +173,13 @@ namespace Arcane_Aegis.Network
         {
             if (!CanSend) return;
             Send(new C2S_Gather { NodeId = nodeId }, DeliveryMethod.ReliableOrdered);
+        }
+
+        /// <summary>Asks the server to pick up a ground-loot item by entity id (server validates range + loot-lock).</summary>
+        public void SendPickup(ushort entityId)
+        {
+            if (!CanSend) return;
+            Send(new C2S_PickupItem { EntityId = entityId }, DeliveryMethod.ReliableOrdered);
         }
 
         /// <summary>Asks the server to break a nearby sealed-boss altar (server validates range + level + key items).</summary>

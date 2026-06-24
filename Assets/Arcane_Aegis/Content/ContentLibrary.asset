@@ -47,6 +47,7 @@ MonoBehaviour:
   - {fileID: 11400000, guid: 234922c8187c9ad4b875320885a94cf8, type: 2}
   vendors:
   - {fileID: 11400000, guid: a6e632df28ec52c48abe81c033f9bcd8, type: 2}
-  pets: []
+  pets:
+  - {fileID: 11400000, guid: cbd9acd1848d4e84894202c4fbcddffb, type: 2}
   mounts:
   - {fileID: 11400000, guid: 0bb2a9c0155301247a5ecc02938d014b, type: 2}
