@@ -1,0 +1,31 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: bf5ce96161f0fa54eb4b8e5d37984ced, type: 3}
+  m_Name: Template_human_archer
+  m_EditorClassIdentifier: Assembly-CSharp::Arcane_Aegis.Content.CharacterTemplateSO
+  id: human_archer
+  displayName: Human Archer
+  race: {fileID: 11400000, guid: ccfaa506d0f1c7549a8c1149a5c5e4a1, type: 2}
+  characterClass: {fileID: 11400000, guid: acd246403db5f6c4fbf9ce4a80d80ca7, type: 2}
+  faction: Neutral
+  zoneId: veridia
+  spawnPosition: {x: 0, y: 0, z: 0}
+  orientation: 0
+  startingLevel: 1
+  levelXpProfile: default
+  genders:
+  - gender: {fileID: 11400000, guid: c6bac68af96079c4ea819c1e69a3b292, type: 2}
+    model: {fileID: 4638882032790973228, guid: eabe974548b44d24c9dafcd10d002359, type: 3}
+    icon: {fileID: 0}
+  - gender: {fileID: 11400000, guid: 6e8f1dbbe0801894a869a25122cbd0e8, type: 2}
+    model: {fileID: 3334065424235342191, guid: 9d5f8351c4444ec47b5a60d70cf36628, type: 3}
+    icon: {fileID: 0}

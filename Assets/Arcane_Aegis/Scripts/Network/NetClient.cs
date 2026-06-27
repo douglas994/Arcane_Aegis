@@ -17,7 +17,7 @@ namespace Arcane_Aegis.Network
     /// <summary>
     /// Pure transport: connects to the zone server, sends C2S packets, and hands incoming S2C packets to the
     /// ClientPacketRouter (the handlers do the game logic). Holds NO game state — that lives on the entity views
-    /// (EntityManager / HumanoidView vitals). Drives the NetManager via PollEvents() on the main thread.
+    /// (EntityManager / HumanoidView vitals). Drives the NetNode via PollEvents() on the main thread.
     /// </summary>
     public class NetClient : MonoBehaviour
     {
@@ -29,7 +29,7 @@ namespace Arcane_Aegis.Network
         [Header("Refs")]
         [SerializeField] private EntityManager entities;
 
-        private NetManager _net;
+        private NetNode _net;
         private NetPeer _server;
         private readonly Listener _listener = new();
         private ClientPacketRouter _router;
@@ -62,7 +62,7 @@ namespace Arcane_Aegis.Network
             Application.runInBackground = true;
             _listener.Owner = this;
 
-            _net = new NetManager(_listener, TransportType.Udp)
+            _net = new NetNode(_listener, TransportType.Udp)
             {
                 ConnectionKey = NetConstants.ConnectionKey,
                 ProtocolVersion = NetConstants.ProtocolVersion,

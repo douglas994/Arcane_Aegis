@@ -41,7 +41,7 @@ namespace Arcane_Aegis.EditorTools
         private const string Root = "Assets/Arcane_Aegis/Content";
         private List<Category> _cats;
 
-        private NetManager _net;
+        private NetNode _net;
         private NetPeer _db;
         private bool _connected;
         private string _host = "127.0.0.1";
@@ -135,7 +135,7 @@ namespace Arcane_Aegis.EditorTools
         private void Connect()
         {
             Disconnect();
-            _net = new NetManager(this, TransportType.Tcp) { ConnectionKey = NetConstants.ConnectionKey, ProtocolVersion = NetConstants.ProtocolVersion };
+            _net = new NetNode(this, TransportType.Tcp) { ConnectionKey = NetConstants.ConnectionKey, ProtocolVersion = NetConstants.ProtocolVersion };
             _net.Connect(_host, _port);
             _status = $"Conectando em {_host}:{_port}…";
         }
@@ -417,6 +417,7 @@ namespace Arcane_Aegis.EditorTools
                 AttackRange = so.attackRange, MoveSpeed = so.moveSpeed, FollowRange = so.followRange,
                 AbilityIds = ids.ToArray(),
                 AuraStat = (byte)so.auraStat, AuraAmount = so.auraAmount, LootFindPct = so.lootFindPct,
+                VacuumRange = so.vacuumRange,
             };
         }
 
@@ -626,7 +627,7 @@ namespace Arcane_Aegis.EditorTools
         private void ExportSpawners()
         {
             if (!_connected) { _status = "Conecte primeiro."; return; }
-            var markers = UnityEngine.Object.FindObjectsByType<SpawnMarker>(FindObjectsSortMode.None);
+            var markers = UnityEngine.Object.FindObjectsByType<SpawnMarker>(FindObjectsInactive.Exclude);
             Send(new I_Db_ClearSpawners { ZoneId = (byte)_spawnZone });
             int n = 0;
             foreach (var mk in markers)

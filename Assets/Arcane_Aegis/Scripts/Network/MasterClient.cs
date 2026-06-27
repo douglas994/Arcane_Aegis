@@ -24,7 +24,7 @@ namespace Arcane_Aegis.Network
         [SerializeField] private string host = "127.0.0.1";
         [SerializeField] private int port = 47200;
 
-        private NetManager _net;
+        private NetNode _net;
         private NetPeer _server;
         private readonly Listener _listener = new();
 
@@ -51,7 +51,7 @@ namespace Arcane_Aegis.Network
 
         private void Start()
         {
-            _net = new NetManager(_listener, TransportType.Tcp)
+            _net = new NetNode(_listener, TransportType.Tcp)
             {
                 ConnectionKey = NetConstants.ConnectionKey,
                 ProtocolVersion = NetConstants.ProtocolVersion,

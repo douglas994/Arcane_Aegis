@@ -43,3 +43,19 @@ crashlytics-build.properties
 # ---- OS ----
 .DS_Store
 Thumbs.db
+
+# Heavy third-party Asset Store packs — kept LOCAL (re-import from the Asset Store if the project is lost), not versioned.
+/Assets/Arcane_Aegis/Models/P09_Modular_Humanoid/
+/Assets/Arcane_Aegis/Models/P09_Modular_Humanoid.meta
+/Assets/Arcane_Aegis/Models/Malbers Animations/
+/Assets/Arcane_Aegis/Models/Malbers Animations.meta
+/Assets/Arcane_Aegis/Models/Demon Sword/
+/Assets/Arcane_Aegis/Models/Demon Sword.meta
+/Assets/Arcane_Aegis/Models/Blink/
+/Assets/Arcane_Aegis/Models/Blink.meta
+/Assets/Arcane_Aegis/VFX/Vefects/
+/Assets/Arcane_Aegis/VFX/Vefects.meta
+/Assets/Arcane_Aegis/Animations/Kevin Iglesias/
+/Assets/Arcane_Aegis/Animations/Kevin Iglesias.meta
+/Assets/Arcane_Aegis/Animations/UAL1.fbx
+/Assets/Arcane_Aegis/Animations/UAL1.fbx.meta

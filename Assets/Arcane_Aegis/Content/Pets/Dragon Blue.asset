@@ -33,6 +33,7 @@ MonoBehaviour:
   auraStat: 12
   auraAmount: 20
   lootFindPct: 2
+  vacuumRange: 5
   icon: {fileID: 599272692, guid: 39601f2209aa2204b949b9f60886246d, type: 3}
   model3D: {fileID: 1351277843346816, guid: 3007b720ead2bd0499229e5f7f81e36a, type: 3}
   description: 
