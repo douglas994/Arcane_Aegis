@@ -33,12 +33,14 @@ MonoBehaviour:
   attackAbilityId: 1
   xpReward: 50
   archetype: 0
-  abilities: []
+  abilities:
+  - {fileID: 11400000, guid: a603b414483e79e4c864ce8141c2aafc, type: 2}
   fleeHpPct: 0
   eliteScale: 1
   patrolRadius: 0
+  startsAsleep: 0
   isBoss: 0
-  isSealed: 1
+  isSealed: 0
   enrageSeconds: 0
   announceGlobal: 0
   phases:

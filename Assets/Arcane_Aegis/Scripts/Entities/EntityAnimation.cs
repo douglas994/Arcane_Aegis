@@ -24,10 +24,26 @@ namespace Arcane_Aegis.Entities
         public static EntityAnimation Of(GameObject go)
             => go.GetComponent<EntityAnimation>() ?? go.AddComponent<EntityAnimation>();
 
+        private Arcane_Aegis.Combat.WeaponTrail _trail;
+
+        /// <summary>Flash the equipped weapon's swing trail (re-found each time — weapons swap). A skill (abilityId > 0)
+        /// can override the trail's style (material/colour) so each skill trails differently on the same blade; a generic
+        /// swing (abilityId 0) uses the weapon's own look. No-op if the weapon has no WeaponTrail.</summary>
+        private void FlashTrail(int abilityId = 0)
+        {
+            if (_trail == null) _trail = GetComponentInChildren<Arcane_Aegis.Combat.WeaponTrail>(true);
+            if (_trail == null) return;
+            var so = abilityId > 0 && Arcane_Aegis.Content.ContentLibrary.Active != null
+                ? Arcane_Aegis.Content.ContentLibrary.Active.GetSkill(abilityId) : null;
+            if (so != null && so.overrideTrail) _trail.Flash(-1f, so.trailMaterial, so.trailColor);
+            else _trail.Flash();
+        }
+
         /// <summary>Generic attack swing.</summary>
         public void PlayAttack()
         {
             if (Anim != null) Anim.TriggerAttack();
+            FlashTrail();
         }
 
         /// <summary>A brief flinch when this entity takes damage (no-op if the controller has no "Hit" trigger).</summary>
@@ -41,6 +57,40 @@ namespace Arcane_Aegis.Entities
         {
             if (CombatFx.Instance != null) CombatFx.Instance.PlayCast(transform, Anim, abilityId);
             else if (Anim != null) Anim.TriggerAttack();
+            FlashTrail(abilityId);
+            ScheduleSlash(abilityId);
+        }
+
+        private int _pendingSkill;
+        private bool _slashConsumed;
+
+        /// <summary>Times the skill's slash arc: a frame-exact Animation Event ("Release" → <see cref="FireSlashNow"/>)
+        /// when the skill has <c>useAnimEvent</c>, else a fallback at its <c>releaseTime</c>. Fires once either way.</summary>
+        private void ScheduleSlash(int abilityId)
+        {
+            _pendingSkill = abilityId;
+            _slashConsumed = false;
+            var so = Arcane_Aegis.Content.ContentLibrary.Active != null
+                ? Arcane_Aegis.Content.ContentLibrary.Active.GetSkill(abilityId) : null;
+            if (so == null || so.slashVfx == null) return; // nothing to fire
+            if (so.useAnimEvent) return;                   // the clip's Animation Event fires it (frame-accurate)
+            if (so.releaseTime > 0f) StartCoroutine(FireAfter(so.releaseTime));
+            else FireSlashNow();
+        }
+
+        /// <summary>Spawn the pending skill's slash arc now (called by the Animation Event or the releaseTime fallback).
+        /// Guarded so the arc spawns exactly once per cast.</summary>
+        public void FireSlashNow()
+        {
+            if (_slashConsumed) return;
+            _slashConsumed = true;
+            if (CombatFx.Instance != null) CombatFx.Instance.SpawnSlash(transform, _pendingSkill);
+        }
+
+        private IEnumerator FireAfter(float seconds)
+        {
+            yield return new WaitForSeconds(seconds);
+            FireSlashNow();
         }
 
         /// <summary>Death / respawn pose.</summary>

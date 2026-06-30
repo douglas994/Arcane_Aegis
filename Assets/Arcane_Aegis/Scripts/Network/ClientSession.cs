@@ -12,5 +12,8 @@ namespace Arcane_Aegis.Network
         public static byte ServerId;
         public static uint CharacterId; // chosen character (set on select → used to enter the world)
         public static bool IsAdmin;     // server says this account is admin (S2C_LoginResult) → show the GM panel
+        public static string ClassId = string.Empty; // local player's class (S2C_LoginResult) → drives the data-driven action bar (skills per class)
+        public static string RaceId = string.Empty;  // local player's race (kept alongside class; handy for class/race-gated UI)
+        public static byte CurrentDungeonDef;         // 0 = open world (World scene); >0 = inside a dungeon (Dungeon scene). Drives the scene swap on enter/exit.
     }
 }

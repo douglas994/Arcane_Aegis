@@ -87,6 +87,9 @@ namespace Arcane_Aegis.EditorTools
             ctrl.AddParameter("Mounted", AnimatorControllerParameterType.Bool);
             ctrl.AddParameter("Gathering", AnimatorControllerParameterType.Bool);
             ctrl.AddParameter("GatherType", AnimatorControllerParameterType.Int);
+            // Start GROUNDED so a freshly-spawned character (or a preview where CharacterAnimator is disabled) doesn't
+            // briefly play the Airborne/jump anim before the first frame sets it → "nasce pulando".
+            SetBoolDefault(ctrl, "Grounded", true);
 
             var sm = ctrl.layers[0].stateMachine;
 
@@ -191,6 +194,14 @@ namespace Arcane_Aegis.EditorTools
             enter.AddCondition(AnimatorConditionMode.If, 0, "Gathering");
             enter.AddCondition(AnimatorConditionMode.Equals, gatherType, "GatherType");
             Back(s, loco, ("Gathering", AnimatorConditionMode.IfNot, 0));
+        }
+
+        // Sets a bool parameter's DEFAULT value (AddParameter always defaults to false).
+        private static void SetBoolDefault(AnimatorController ctrl, string name, bool value)
+        {
+            var ps = ctrl.parameters;
+            for (int i = 0; i < ps.Length; i++) if (ps[i].name == name) { ps[i].defaultBool = value; break; }
+            ctrl.parameters = ps;
         }
 
         private static void EnsureFolder(string dir)

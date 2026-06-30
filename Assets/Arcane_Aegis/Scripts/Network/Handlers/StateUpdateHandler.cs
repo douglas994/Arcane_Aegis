@@ -23,6 +23,7 @@ namespace Arcane_Aegis.Network.Handlers
             if (local == null) return;
 
             local.SetVitals(p.Hp, p.MaxHp, p.Mana, p.MaxMana);
+            UI.SurvivalState.Set(p.Hunger, p.MaxHunger, p.Thirst, p.MaxThirst, p.Stamina, p.MaxStamina); // survival meters ride along on the owner-only state push
 
             if (p.HasCorrection && local.Motor != null)
             {

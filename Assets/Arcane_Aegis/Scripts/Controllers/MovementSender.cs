@@ -44,7 +44,9 @@ namespace Arcane_Aegis.Controllers
             MovementState state = _mountState != null ? _mountState.NetState
                                 : fsm != null ? fsm.Current.NetState
                                 : MovementState.Idle;
-            net.SendMovement(src.position, src.eulerAngles.y, state);
+            // Survival v2: sprinting = dashing (Shift) while actually moving on foot (not mounted) → server drains stamina.
+            bool sprinting = _mountState == null && fsm != null && fsm.Dashing && fsm.MoveDirection().sqrMagnitude > 0.01f;
+            net.SendMovement(src.position, src.eulerAngles.y, state, sprinting);
         }
     }
 }

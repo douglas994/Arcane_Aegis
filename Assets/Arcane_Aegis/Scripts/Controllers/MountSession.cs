@@ -7,6 +7,7 @@ using ArcaneShared.Models;
 using Arcane_Aegis.Content;
 using Arcane_Aegis.Controllers.Inputs;
 using Arcane_Aegis.Controllers.Locomotion;
+using Arcane_Aegis.Effects;
 using Arcane_Aegis.Entities;
 using Arcane_Aegis.Network;
 using Arcane_Aegis.UI;
@@ -129,6 +130,8 @@ namespace Arcane_Aegis.Controllers
             // Only the player's (retargeted) MovementSender reports the mount — kill any stray sender on the rig.
             foreach (var s in _rig.GetComponentsInChildren<MovementSender>(true)) s.enabled = false;
 
+            DissolveEffect.PlayIn(_rig); // materialize the mount in — called BEFORE seating the rider so only the rig dissolves
+
             // Turn OFF the player's control stack (keep PlayerInput — the mount reads it; keep MovementSender — we
             // retarget it to report the MOUNT rig's transform so the server + remotes track the mount).
             _disabled.Clear();
@@ -203,10 +206,17 @@ namespace Arcane_Aegis.Controllers
             }
             _playerCamTarget = null;
 
-            Destroy(_rig);
+            // Dissolve the rig out, THEN destroy it (the rider is already un-parented above, so it won't dissolve).
+            var rig = _rig;
             _rig = null;
             _rider = null;
             OnDismounted?.Invoke();
+            if (rig != null)
+            {
+                foreach (var mc in rig.GetComponentsInChildren<MountController>(true)) mc.enabled = false; // freeze it
+                foreach (var mo in rig.GetComponentsInChildren<KinematicCharacterMotor>(true)) mo.enabled = false;
+                DissolveEffect.PlayOut(rig, 0.6f, null, () => { if (rig != null) Destroy(rig); });
+            }
         }
 
         private void Disable(Behaviour b)

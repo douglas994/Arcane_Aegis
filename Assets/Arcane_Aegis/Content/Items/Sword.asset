@@ -53,11 +53,11 @@ MonoBehaviour:
   model3D: {fileID: 5849569147354770399, guid: 71d769446940b604cbd24bfac7643c0c, type: 3}
   gripAttach:
     bone: 
-    position: {x: 0.096, y: 1.281, z: -0.264}
-    euler: {x: -2.712, y: 52.191, z: 172.702}
+    position: {x: 0.046, y: 0.4232, z: 1.2463}
+    euler: {x: -106.3, y: 0, z: 0}
     scale: {x: 0, y: 0, z: 0}
   sheathAttach:
     bone: 
-    position: {x: -0.3485707, y: -0.2780025, z: 0.6768419}
-    euler: {x: -80.846, y: 69.707, z: -97.044}
+    position: {x: 0.383, y: -0.65, z: 0.414}
+    euler: {x: -16.634, y: 4.648, z: 22.839}
     scale: {x: 0, y: 0, z: 0}

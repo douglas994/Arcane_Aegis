@@ -46,6 +46,7 @@ namespace Arcane_Aegis.Entities
         private Vector3 _vel;                 // SmoothDamp state
         private bool _interpolate;            // OFF by default; remote players turn it on in Initialize
                                              // (so a mis-set local player is never dragged to the origin)
+        private bool _frozen;                 // a corpse: stop interpolating so it doesn't slide to the respawn point
         private readonly Queue<(double time, Vector3 pos)> _hist = new();
 
         protected virtual void Awake()
@@ -58,9 +59,15 @@ namespace Arcane_Aegis.Entities
         public virtual void ApplySnapshot(in SnapshotEntry e)
         {
             SnapHp01 = e.HpPercent / 255f; // any view tracks its last-known HP fraction (used by targeting/UI)
-            if (_combatant != null) _combatant.OnSnapshot(SnapHp01, e.State == MovementState.Dead); // HP bar + death cue
-            if (_indicator != null) _indicator.OnAiState(e.AiState); // "!"/"Zzz"/"?" cue (monsters only)
+            bool dead = e.State == MovementState.Dead;
+
+            // Update the follow target BEFORE the death/revive cue: so a revive's SnapToTarget lands on the NEW
+            // (spawn) position instead of the stale death spot — otherwise the body visibly slides over there.
             SetTarget(new Vector3(e.Position.X, e.Position.Y, e.Position.Z), e.Yaw, e.State);
+            _frozen = dead; // a corpse stops interpolating (no drift toward a moved server position)
+
+            if (_combatant != null) _combatant.OnSnapshot(SnapHp01, dead); // HP bar + death/dissolve cue
+            if (_indicator != null) _indicator.OnAiState(e.AiState);         // "!"/"Zzz"/"?" cue (monsters only)
         }
 
         /// <summary>Local players drive their own transform (KCC), so interpolation is turned off for them.</summary>
@@ -122,6 +129,7 @@ namespace Arcane_Aegis.Entities
         public void SnapToTarget()
         {
             if (!_interpolate) return; // local player is driven by its own controller + server correction
+            _frozen = false;           // reviving → resume interpolation (defensive; ApplySnapshot already cleared it)
             _vel = Vector3.zero;
             _hist.Clear();
             transform.SetPositionAndRotation(_targetPos, Quaternion.Euler(0f, _targetYaw, 0f));
@@ -143,7 +151,7 @@ namespace Arcane_Aegis.Entities
 
         private void Update()
         {
-            if (!_interpolate) return;
+            if (!_interpolate || _frozen) return; // _frozen = dead corpse: hold still (don't slide to the respawn point)
             transform.position = Vector3.SmoothDamp(transform.position, _targetPos, ref _vel, positionSmoothTime);
             transform.rotation = Quaternion.Slerp(transform.rotation, Quaternion.Euler(0f, _targetYaw, 0f), Time.deltaTime * rotationLerp);
         }

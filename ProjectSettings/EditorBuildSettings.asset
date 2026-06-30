@@ -16,6 +16,6 @@ EditorBuildSettings:
     guid: 99c9720ab356a0642a771bea13969a05
   - enabled: 1
     path: Assets/Arcane_Aegis/Scenes/Dungeon.unity
-    guid: 6ba362629cb942f4fb7791f9b6167726
+    guid: f578af90708f727419108e62ff472b7b
   m_configObjects:
     com.unity.input.settings.actions: {fileID: -944628639613478452, guid: 052faaac586de48259a63d0c4782560b, type: 3}

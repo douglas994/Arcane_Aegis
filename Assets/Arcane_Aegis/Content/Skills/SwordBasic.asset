@@ -1,0 +1,84 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 3adfc0573cffe9b4cb30c4031a5d4578, type: 3}
+  m_Name: SwordBasic
+  m_EditorClassIdentifier: Assembly-CSharp::Arcane_Aegis.Content.SkillDefinitionSO
+  id: 3
+  displayName: SwordBasic
+  castTime: 0
+  cooldown: 1
+  cost: 10
+  targeting: 2
+  targetSide: 0
+  range: 3.5
+  coneAngle: 90
+  width: 2
+  element: 1
+  requiredWeapon: swords
+  uninterruptible: 0
+  effects:
+  - type: 0
+    amount: 50
+    scalesWith: 3
+    statusId: 
+  - type: 0
+    amount: 20
+    scalesWith: 4
+    statusId: 
+  icon: {fileID: 599272692, guid: 39601f2209aa2204b949b9f60886246d, type: 3}
+  description: 
+  animTrigger: Attack
+  projectileVfx: {fileID: 0}
+  muzzleVfx: {fileID: 0}
+  slashVfx: {fileID: 6011612589751780557, guid: 310b493e67d204040a58de5b7ce5d583, type: 3}
+  releaseTime: 0.1
+  useAnimEvent: 1
+  slashVfxEuler: {x: 211.04, y: -12.53, z: -0.13}
+  overrideTrail: 0
+  trailMaterial: {fileID: 0}
+  trailColor:
+    serializedVersion: 2
+    key0: {r: 1, g: 1, b: 1, a: 1}
+    key1: {r: 1, g: 1, b: 1, a: 1}
+    key2: {r: 0, g: 0, b: 0, a: 0}
+    key3: {r: 0, g: 0, b: 0, a: 0}
+    key4: {r: 0, g: 0, b: 0, a: 0}
+    key5: {r: 0, g: 0, b: 0, a: 0}
+    key6: {r: 0, g: 0, b: 0, a: 0}
+    key7: {r: 0, g: 0, b: 0, a: 0}
+    ctime0: 0
+    ctime1: 65535
+    ctime2: 0
+    ctime3: 0
+    ctime4: 0
+    ctime5: 0
+    ctime6: 0
+    ctime7: 0
+    atime0: 0
+    atime1: 65535
+    atime2: 0
+    atime3: 0
+    atime4: 0
+    atime5: 0
+    atime6: 0
+    atime7: 0
+    m_Mode: 0
+    m_ColorSpace: -1
+    m_NumColorKeys: 2
+    m_NumAlphaKeys: 2
+  projectileVfxEuler: {x: 0, y: 0, z: 0}
+  spawnOffset: {x: 0.89, y: -0.09, z: -0.48}
+  impactVfx: {fileID: 0}
+  areaVfx: {fileID: 0}
+  castVfx: {fileID: 0}
+  castVfxFollows: 0
+  vfxLifetime: 2

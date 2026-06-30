@@ -67,13 +67,47 @@ namespace Arcane_Aegis.EditorTools
             EditorGUILayout.Space(2);
             EditorGUILayout.LabelField("VFX (vazio = flash padrão embutido)", EditorStyles.miniLabel);
             EditorGUILayout.PropertyField(serializedObject.FindProperty("castVfx"), new GUIContent("VFX ao conjurar", "Prefab no conjurador quando lança a skill. Vazio = flash (só em skills com cast)."));
+            if (serializedObject.FindProperty("castVfx").objectReferenceValue != null)
+            {
+                EditorGUILayout.PropertyField(serializedObject.FindProperty("castOffset"), new GUIContent("  Origem do cast", "SEPARADA do projétil: x=direita, y=cima, z=frente. (0,0,0) = Muzzle/peito."));
+                EditorGUILayout.PropertyField(serializedObject.FindProperty("castVfxEuler"), new GUIContent("  Rotação do cast", "Rotação relativa à frente do caster. Independente do projétil."));
+            }
             EditorGUILayout.PropertyField(serializedObject.FindProperty("castVfxFollows"), new GUIContent("VFX segue o conjurador"));
             EditorGUILayout.PropertyField(serializedObject.FindProperty("impactVfx"), new GUIContent("VFX de impacto", "Prefab onde o golpe acerta (por alvo). Vazio = flash padrão."));
             if (mode is TargetingMode.Cone or TargetingMode.Circle or TargetingMode.Line)
                 EditorGUILayout.PropertyField(serializedObject.FindProperty("areaVfx"), new GUIContent("VFX da área (AoE)", "Efeito único na área (explosão/cone), no conjurador virado pra frente, no momento do efeito."));
             if (HasEffect(so, AbilityEffectType.Projectile))
+            {
                 EditorGUILayout.PropertyField(serializedObject.FindProperty("projectileVfx"), new GUIContent("VFX do projétil", "Prefab que voa. Vazio = esfera padrão."));
+                EditorGUILayout.PropertyField(serializedObject.FindProperty("projectileVfxEuler"), new GUIContent("  Rotação do projétil", "Gire até a chama apontar pro voo (+Z). Vefects = Y 90 ou -90."));
+                EditorGUILayout.PropertyField(serializedObject.FindProperty("muzzleVfx"), new GUIContent("  Muzzle (clarão de saída)", "Clarão curto no ponto de lançamento. Vazio = sem muzzle."));
+            }
             EditorGUILayout.PropertyField(serializedObject.FindProperty("vfxLifetime"), new GUIContent("Duração do VFX (s)"));
+
+            // ── Áudio (SFX por momento) ──
+            EditorGUILayout.Space(2);
+            EditorGUILayout.LabelField("Áudio (vazio = sem som)", EditorStyles.miniLabel);
+            EditorGUILayout.PropertyField(serializedObject.FindProperty("castSfx"), new GUIContent("Som ao conjurar", "Toca no conjurador quando lança a skill."));
+            EditorGUILayout.PropertyField(serializedObject.FindProperty("slashSfx"), new GUIContent("Som do golpe", "Toca no auge do swing (junto do slash)."));
+            EditorGUILayout.PropertyField(serializedObject.FindProperty("impactSfx"), new GUIContent("Som de impacto", "Toca onde o golpe/projétil acerta."));
+            EditorGUILayout.PropertyField(serializedObject.FindProperty("sfxVolume"), new GUIContent("Volume dos sons", "Volume relativo (0..1) desta skill."));
+
+            // ── Melee: slash arc + trail (por skill) ──
+            Section("Melee — slash & trail");
+            EditorGUILayout.PropertyField(serializedObject.FindProperty("slashVfx"), new GUIContent("Slash VFX", "Arco de espada autorado (ex.: Vefects 'Slashes Piercing'). Nasce na frente no golpe. Vazio = sem arco."));
+            if (serializedObject.FindProperty("slashVfx").objectReferenceValue != null)
+                EditorGUILayout.PropertyField(serializedObject.FindProperty("slashVfxEuler"), new GUIContent("  Rotação do slash", "Gire até o arco alinhar com o golpe. Tente Y/X = 90 ou -90."));
+
+            var ovr = serializedObject.FindProperty("overrideTrail");
+            EditorGUILayout.PropertyField(ovr, new GUIContent("Trail próprio desta skill", "Sobrescreve a cor/material do trail da arma (ex.: corte de fogo = vermelho)."));
+            if (ovr.boolValue)
+            {
+                EditorGUILayout.PropertyField(serializedObject.FindProperty("trailColor"), new GUIContent("  Cor/gradiente do trail"));
+                EditorGUILayout.PropertyField(serializedObject.FindProperty("trailMaterial"), new GUIContent("  Material do trail", "Vazio = mantém o material da arma."));
+            }
+
+            // ── Origem (de onde nasce cast/projétil/slash) ──
+            EditorGUILayout.PropertyField(serializedObject.FindProperty("spawnOffset"), new GUIContent("Origem (offset)", "Ajuste fino de onde nasce o VFX/projétil: x=direita, y=cima, z=frente (somado ao 'Muzzle' da arma)."));
 
             serializedObject.ApplyModifiedProperties();
         }

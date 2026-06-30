@@ -1,0 +1,31 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 6c7c74b512f8565458f2a565ff2ba27b, type: 3}
+  m_Name: Npc_npc
+  m_EditorClassIdentifier: Assembly-CSharp::Arcane_Aegis.Content.NpcDefinitionSO
+  id: npc
+  type: 1
+  displayName: NPC
+  model3D: {fileID: 2152646448926872826, guid: ed908d681ada7264cb8315384ff09e9a, type: 3}
+  description: 
+  nodes:
+  - id: start
+    text: Ola
+    options:
+    - label: Adeus
+      action: 2
+      nextNodeId: 
+  stock:
+  - {fileID: 11400000, guid: d3ad4b1f314eca54183cc1a786319419, type: 2}
+  - {fileID: 11400000, guid: fcf689e414a49784a99e17886630ff50, type: 2}
+  - {fileID: 11400000, guid: 1445cb1f9f596524fbe5107dc34a4858, type: 2}
+  - {fileID: 11400000, guid: a096f8a7c04cf704cbaac2ec7bfa8c3c, type: 2}

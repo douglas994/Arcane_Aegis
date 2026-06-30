@@ -1,0 +1,23 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e92a2ff111048fb4da533792cf9aac4d, type: 3}
+  m_Name: Chao
+  m_EditorClassIdentifier: Assembly-CSharp::Arcane_Aegis.Content.BuildingDefinitionSO
+  id: chao
+  displayName: Chao
+  maxIntegrity: 100
+  ingredients:
+  - item: {fileID: 11400000, guid: a096f8a7c04cf704cbaac2ec7bfa8c3c, type: 2}
+    qty: 5
+  prefab: {fileID: 8583303038626489417, guid: b949de6baa286be41b1a29884a7660d9, type: 3}
+  icon: {fileID: 0}
+  description: 

@@ -34,6 +34,15 @@ namespace Arcane_Aegis.Network
         private readonly Listener _listener = new();
         private ClientPacketRouter _router;
 
+        // ── dungeon scene transition ──
+        // While a scene swap is in flight, the new scene's EntityManager doesn't exist yet, so incoming packets (vitals,
+        // mob spawns) would be lost (routed to the dying scene). We BUFFER them here and replay through the new router once
+        // the new scene's EntityManager binds — and spawn the local player from the stashed login result. Zero loss.
+        private bool _paused;
+        private readonly System.Collections.Generic.List<byte[]> _buffered = new();
+        private bool _pendingSpawn;
+        private ushort _psEntityId; private string _psName; private Vector3 _psPos, _psOffset; private string _psRace, _psClass, _psGender;
+
         /// <summary>The one persistent connection (singleton, survives scene loads). Scene scripts use this.</summary>
         public static NetClient Instance { get; private set; }
 
@@ -87,6 +96,46 @@ namespace Arcane_Aegis.Network
         {
             entities = em;
             _router = BuildRouter(); // rebuild so the entity handlers use the new manager
+
+            // A scene swap completed (the new scene's EntityManager just bound): spawn the local player from the stashed
+            // login result, then replay every packet buffered during the load through the new router, then resume live routing.
+            if (_pendingSpawn)
+            {
+                _pendingSpawn = false;
+                Vector3 spawnPos = _psPos;
+                // Inside a dungeon, prefer a scene-placed DungeonSpawnPoint (so the player appears where the level designer
+                // put it, by the exit portal) over the template's fixed spawn. The server adopts it — an instance accepts the
+                // client's initial position (PositionInitialized=false). No coords to match by hand.
+                if (ClientSession.CurrentDungeonDef > 0)
+                {
+                    var marker = FindAnyObjectByType<Arcane_Aegis.Controllers.DungeonSpawnPoint>();
+                    if (marker != null) spawnPos = marker.transform.position - _psOffset; // SpawnLocal re-adds the offset → lands on the marker
+                }
+                em.SpawnLocal(_psEntityId, _psName, spawnPos, _psRace, _psClass, _psGender, _psOffset);
+            }
+            if (_paused)
+            {
+                _paused = false;
+                foreach (var bytes in _buffered)
+                {
+                    var bb = new BitBuffer();
+                    try { bb.FromArray(bytes, bytes.Length); _router.Route(ref bb); }
+                    finally { bb.Dispose(); }
+                }
+                _buffered.Clear();
+            }
+        }
+
+        /// <summary>Swap to another scene (dungeon enter/exit) and spawn the local player there once it loads. The connection
+        /// persists; incoming packets buffer until the new scene's EntityManager binds (see <see cref="SetEntityManager"/>).</summary>
+        public void SwitchSceneAndSpawn(string scene, ushort entityId, string playerName, Vector3 pos, string raceId, string classId, string genderId, Vector3 offset)
+        {
+            _pendingSpawn = true;
+            _psEntityId = entityId; _psName = playerName; _psPos = pos; _psOffset = offset;
+            _psRace = raceId; _psClass = classId; _psGender = genderId;
+            _buffered.Clear();
+            _paused = true; // buffer all further packets (vitals, mob spawns) until the new scene is ready
+            UnityEngine.SceneManagement.SceneManager.LoadScene(scene);
         }
 
         private ClientPacketRouter BuildRouter()
@@ -121,6 +170,7 @@ namespace Arcane_Aegis.Network
             router.Register(new CraftStartHandler());
             router.Register(new CraftEndHandler());
             router.Register(new CurrencyHandler());
+            router.Register(new QuestLogHandler());
             router.Register(new ProfessionXpHandler());
             router.Register(new PartyStateHandler());
             router.Register(new PartyInviteHandler());
@@ -148,7 +198,7 @@ namespace Arcane_Aegis.Network
         // ── send (transport only; game logic decides WHEN to call these) ──
 
         /// <summary>Reports our position/state to the server (~15 Hz, called by MovementSender).</summary>
-        public void SendMovement(Vector3 position, float yaw, MovementState state)
+        public void SendMovement(Vector3 position, float yaw, MovementState state, bool sprinting = false)
         {
             if (!CanSend) return;
             Vector3 local = position - entities.ZoneOffset; // render is GLOBAL; the server validates in LOCAL coords
@@ -157,6 +207,7 @@ namespace Arcane_Aegis.Network
                 Position = new NetVector3(local.x, local.y, local.z),
                 Yaw = yaw,
                 State = state,
+                Sprinting = sprinting,
             }, DeliveryMethod.Sequenced);
         }
 
@@ -187,6 +238,44 @@ namespace Arcane_Aegis.Network
         {
             if (!CanSend) return;
             Send(new C2S_InteractSeal { SealId = sealId }, DeliveryMethod.ReliableOrdered);
+        }
+
+        /// <summary>Interacts with a nearby dungeon portal (server decides: enter the instance, or exit back home).</summary>
+        public void SendInteractPortal(ushort portalId)
+        {
+            if (!CanSend) return;
+            Send(new C2S_InteractPortal { PortalId = portalId }, DeliveryMethod.ReliableOrdered);
+        }
+
+        /// <summary>Leaves the current instanced dungeon → back to the open world (no portal needed). No-op server-side if
+        /// the player isn't in a dungeon. Wire this to a HUD "Leave Dungeon" button or call it from a hotkey.</summary>
+        public void SendLeaveDungeon()
+        {
+            if (!CanSend) return;
+            Send(new C2S_LeaveDungeon(), DeliveryMethod.ReliableOrdered);
+        }
+
+        /// <summary>Enters the instanced dungeon of the given TEMPLATE (from a scene-placed entrance portal). Server spawns/
+        /// joins the instance on demand; no-op if already in a dungeon.</summary>
+        public void SendEnterDungeon(byte dungeonDef)
+        {
+            if (!CanSend) return;
+            Send(new C2S_EnterDungeon { DungeonDef = dungeonDef }, DeliveryMethod.ReliableOrdered);
+        }
+
+        /// <summary>Build mode: place a structure piece at SERVER-LOCAL coords + yaw (the server validates cost/cap/spot,
+        /// consumes materials, spawns + persists it). Convert a world point with EntityManager.ToServer first.</summary>
+        public void SendPlaceBuilding(string defId, Vector3 serverLocalPos, float yaw)
+        {
+            if (!CanSend || string.IsNullOrEmpty(defId)) return;
+            Send(new C2S_PlaceBuilding { DefId = defId, X = serverLocalPos.x, Y = serverLocalPos.y, Z = serverLocalPos.z, Yaw = yaw }, DeliveryMethod.ReliableOrdered);
+        }
+
+        /// <summary>Build mode: demolish a structure you own by its entity id (server checks ownership/admin).</summary>
+        public void SendRemoveBuilding(ushort entityId)
+        {
+            if (!CanSend) return;
+            Send(new C2S_RemoveBuilding { EntityId = entityId }, DeliveryMethod.ReliableOrdered);
         }
 
         /// <summary>Sends a GM/admin command (e.g. "give Ice_Sword 1", "spawn Dragon_Boss"). The SERVER authorizes
@@ -251,6 +340,20 @@ namespace Arcane_Aegis.Network
         {
             if (!CanSend) return;
             Send(new C2S_VendorRepair(), DeliveryMethod.ReliableOrdered);
+        }
+
+        /// <summary>Asks the server to accept a quest offered by a nearby QuestGiver NPC (server validates).</summary>
+        public void SendQuestAccept(string questId)
+        {
+            if (!CanSend || string.IsNullOrEmpty(questId)) return;
+            Send(new C2S_QuestAccept { QuestId = questId }, DeliveryMethod.ReliableOrdered);
+        }
+
+        /// <summary>Asks the server to turn in a completed quest (server re-validates → rewards).</summary>
+        public void SendQuestTurnIn(string questId)
+        {
+            if (!CanSend || string.IsNullOrEmpty(questId)) return;
+            Send(new C2S_QuestTurnIn { QuestId = questId }, DeliveryMethod.ReliableOrdered);
         }
 
         /// <summary>Asks the server to move an item to a (container, slot): equip / unequip / reorder. Server validates;
@@ -471,7 +574,18 @@ namespace Arcane_Aegis.Network
             OnDisconnectedFromServer?.Invoke(reason);
         }
 
-        private void OnReceive(BitBuffer reader) => _router.Route(ref reader);
+        private void OnReceive(BitBuffer reader)
+        {
+            // During a scene swap, stash the raw packet to replay once the new scene's EntityManager binds (else it's lost).
+            if (_paused)
+            {
+                var bytes = new byte[reader.Length];
+                reader.ToArray(bytes);
+                _buffered.Add(bytes);
+                return;
+            }
+            _router.Route(ref reader);
+        }
 
         /// <summary>Bridges NetworkLibrary events to the MonoBehaviour (kept separate so NetClient isn't an interface dump).</summary>
         private sealed class Listener : INetEventListener

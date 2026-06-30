@@ -20,9 +20,12 @@ namespace Arcane_Aegis.Network.Handlers
             var p = new S2C_GatherEnd();
             p.Deserialize(ref reader);
 
-            if (_entities.TryGetView(p.GathererId, out var view)) view.StopGather();
-
+            // Include the local player (it lives in Local, not _views) so the local gather anim actually stops.
             var local = _entities.Local;
+            EntityView gatherer = (local != null && p.GathererId == local.Id) ? local
+                                : _entities.TryGetView(p.GathererId, out var v) ? v : null;
+            if (gatherer != null) gatherer.StopGather();
+
             if (local != null && p.GathererId == local.Id && GatherProgress.Instance != null)
             {
                 GatherProgress.Instance.End();

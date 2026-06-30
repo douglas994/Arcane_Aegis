@@ -1924,6 +1924,7 @@ GameObject:
   - component: {fileID: 5257796717731452049}
   - component: {fileID: -989439733058128701}
   - component: {fileID: 3339084750417420113}
+  - component: {fileID: -100706499875591013}
   m_Layer: 0
   m_Name: Bear_4
   m_TagString: Untagged
@@ -2009,9 +2010,11 @@ MonoBehaviour:
   speedParam: Speed
   groundedParam: Grounded
   attackTrigger: Attack
+  hitTrigger: Hit
   deadParam: Dead
   gatheringParam: Gathering
   gatherTypeParam: GatherType
+  mountedParam: Mounted
   speedDamp: 0.1
   maxSpeed: 7
 --- !u!114 &-989439733058128701
@@ -2041,6 +2044,19 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: a1647a1f6c3dc8e4183c74ba51242308, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::Arcane_Aegis.Entities.EntityAnimation
+--- !u!114 &-100706499875591013
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7962199819078159310}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 5c4956b33c4fd8b4bae3ced3d7c99bc5, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::Arcane_Aegis.Entities.CombatantVitals
+  deathHideDelay: 5
 --- !u!1 &8002475675295336084
 GameObject:
   m_ObjectHideFlags: 0

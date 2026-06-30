@@ -24,6 +24,7 @@ namespace Arcane_Aegis.Content
         [Tooltip("Nível mínimo da profissão pra criar (1 = qualquer um).")] public ushort requiredLevel = 1;
         [Tooltip("Segundos por criação (barra de progresso).")] public float craftSeconds = 2f;
         [Tooltip("XP de profissão por criação.")] public int xpReward = 10;
+        [Tooltip("Cozinha: exige uma FOGUEIRA por perto pra criar (estação). Marque pra comidas cozidas.")] public bool requiresCampfire;
 
         [Header("Resultado")]
         [Tooltip("Item produzido.")] public ItemDefinitionSO output;

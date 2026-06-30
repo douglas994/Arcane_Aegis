@@ -58,8 +58,8 @@ namespace Arcane_Aegis.EditorTools
 
             AddClick(close, shop, nameof(ShopPanel.Close));
             AddClick(repair, shop, nameof(ShopPanel.RepairAll));
-            EnsureController<ShopController>("ShopController");
-            Done(holder, "Shop Panel (E perto do vendedor abre)");
+            EnsureController<NpcController>("NpcController"); // vendors são NPCs: o diálogo ('Loja') abre a loja
+            Done(holder, "Shop Panel (abre pelo diálogo do NPC vendedor → 'Loja')");
         }
 
         [MenuItem("ArcaneMMO/UI/Crafting Panel")]

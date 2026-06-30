@@ -241,6 +241,7 @@ namespace Arcane_Aegis.UI
         {
             if (_selectedSlot < 0) { SetText(selectStatus, "Escolha um personagem."); return; }
             ClientSession.CharacterId = _chars[_selectedSlot].Id;
+            ClientSession.CurrentDungeonDef = 0; // fresh entry starts in the open world (clears any stale dungeon state)
             SetText(selectStatus, $"Entrando com {_chars[_selectedSlot].Name}…");
             SceneManager.LoadScene("World");
         }

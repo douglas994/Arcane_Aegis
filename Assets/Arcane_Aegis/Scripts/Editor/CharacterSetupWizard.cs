@@ -79,6 +79,10 @@ namespace Arcane_Aegis.EditorTools
                 if (anim == null) anim = inst.AddComponent<Animator>();
                 anim.runtimeAnimatorController = sharedController; // avatar stays as imported (Humanoid)
                 anim.applyRootMotion = false;                      // server-validated movement drives the transform, not root motion
+                // Animation events fire on a component of the Animator's GameObject → put CombatAnimEvents there so a
+                // skill's "Release" event (frame-exact VFX) just works once you add the event on the clip.
+                if (anim.GetComponent<Arcane_Aegis.Entities.CombatAnimEvents>() == null)
+                    anim.gameObject.AddComponent<Arcane_Aegis.Entities.CombatAnimEvents>();
                 if (createSockets) CreateWeaponSockets(inst, anim); // Socket_MainHand / Socket_Back on the rig's bones
                 modelPrefab = PrefabUtility.SaveAsPrefabAsset(inst, modelPath);
             }

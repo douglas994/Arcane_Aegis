@@ -10,12 +10,14 @@ namespace Arcane_Aegis.UI
     /// One action-bar slot. Auto-binds the Button's OnClick → <see cref="Cast"/> (leave OnClick empty in the
     /// inspector). Casts via the local player's combat (which gates the cooldown) and shows the cooldown as a
     /// radial fill. Set <see cref="cooldownOverlay"/> to an Image with Image Type = Filled, Fill Method = Radial 360.
-    /// Data-driven: the icon + name come from the SkillDefinitionSO with this <see cref="abilityId"/> (via the
-    /// ContentLibrary), so authoring a skill in the editor automatically dresses its button.
+    /// Data-driven: the slot resolves the local CLASS's skill (its skillIds[slot]); the icon + name come from that
+    /// SkillDefinitionSO (via the ContentLibrary), so authoring a skill in the editor automatically dresses its button.
     /// </summary>
     public class AbilityButton : MonoBehaviour
     {
-        [SerializeField] private int abilityId = 1;
+        [Tooltip("Slot da action bar (0 = básica). DATA-DRIVEN: resolve a skill da CLASSE local (skillIds[slot]). " +
+                 "Deixe em -1 para AUTO (a posição do botão na barra: 1º = slot 0, 2º = slot 1…).")]
+        [SerializeField] private int slot = -1;
         [SerializeField] private Image icon;            // optional: filled from the skill's icon
         [SerializeField] private TMP_Text nameLabel;    // optional: filled from the skill's displayName
         [SerializeField] private Image cooldownOverlay; // Filled/Radial360; fillAmount = remaining (1=just cast, 0=ready)
@@ -36,14 +38,56 @@ namespace Arcane_Aegis.UI
             Dress();
         }
 
-        /// <summary>Pulls the icon + name from the SkillDefinitionSO (once the ContentLibrary is loaded).</summary>
+        /// <summary>The effective ability id this button casts = the local CLASS's <c>skillIds[slot]</c>. The slot is the
+        /// explicit one if set (≥0), else AUTO from the button's order among sibling AbilityButtons (1st = slot 0, …). So a
+        /// row of buttons maps to the class's skills with no per-button config. 0 = empty (class has no skill there yet).</summary>
+        private int EffectiveId()
+        {
+            int s = slot >= 0 ? slot : AutoSlot();
+            var cls = ContentLibrary.Active != null ? ContentLibrary.Active.GetClass(Arcane_Aegis.Network.ClientSession.ClassId) : null;
+            if (cls == null || cls.skillIds == null || s < 0 || s >= cls.skillIds.Count) return 0;
+            return cls.skillIds[s];
+        }
+
+        /// <summary>Auto slot = how many AbilityButtons precede this one under the same parent (left→right order).</summary>
+        private int AutoSlot()
+        {
+            var parent = transform.parent;
+            if (parent == null) return 0;
+            int idx = 0;
+            for (int i = 0; i < parent.childCount; i++)
+            {
+                var c = parent.GetChild(i);
+                if (c == transform) break;
+                if (c.GetComponent<AbilityButton>() != null) idx++;
+            }
+            return idx;
+        }
+
+        /// <summary>Pulls the icon + name from the SkillDefinitionSO (once the ContentLibrary + local class are known).
+        /// A slot with no skill for this class hides the button so a 5-slot bar shows blanks for a 3-skill class.</summary>
         private void Dress()
         {
             if (_dressed || ContentLibrary.Active == null) return;
-            var so = ContentLibrary.Active.GetSkill(abilityId);
+            int id = EffectiveId();
+            if (id == 0) { if (slot >= 0 && Arcane_Aegis.Network.ClientSession.ClassId.Length > 0) HideEmpty(); return; } // empty slot once class is known
+            var so = ContentLibrary.Active.GetSkill(id);
             if (so == null) return;
-            if (icon != null && so.icon != null) icon.sprite = so.icon;
+            if (icon != null && so.icon != null) { icon.sprite = so.icon; icon.enabled = true; }
             if (nameLabel != null) nameLabel.text = so.displayName;
+            _dressed = true;
+        }
+
+        // No skill for this class in this slot → blank the visuals + disable the button (kept active so it re-dresses
+        // if the class loads later; Douglas can style empty slots however he likes).
+        private void HideEmpty()
+        {
+            if (icon != null) icon.enabled = false;
+            if (nameLabel != null) nameLabel.text = string.Empty;
+            if (cooldownOverlay != null) cooldownOverlay.fillAmount = 0f;
+            if (cooldownText != null) cooldownText.text = string.Empty;
+            var button = GetComponent<Button>();
+            if (button != null) button.interactable = false;
             _dressed = true;
         }
 
@@ -51,7 +95,8 @@ namespace Arcane_Aegis.UI
         public void Cast()
         {
             var local = _entities != null ? _entities.Local : null;
-            if (local != null && local.Combat != null) local.Combat.TryCast((byte)abilityId);
+            int id = EffectiveId();
+            if (id > 0 && local != null && local.Combat != null) local.Combat.TryCast((byte)id);
         }
 
         private void Update()
@@ -61,7 +106,9 @@ namespace Arcane_Aegis.UI
             var local = _entities != null ? _entities.Local : null;
             if (local == null || local.Combat == null) return;
 
-            byte id = (byte)abilityId;
+            int eff = EffectiveId();
+            if (eff <= 0) return;
+            byte id = (byte)eff;
             if (cooldownOverlay != null) cooldownOverlay.fillAmount = local.Combat.GetCooldownRemaining01(id);
             if (cooldownText != null)
             {

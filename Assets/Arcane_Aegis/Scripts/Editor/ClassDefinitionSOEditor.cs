@@ -31,8 +31,11 @@ namespace Arcane_Aegis.EditorTools
             Row("strPerLevel", "Força/nível"); Row("dexPerLevel", "Destreza/nível"); Row("intPerLevel", "Inteligência/nível");
             Row("vitPerLevel", "Vitalidade/nível"); Row("spiPerLevel", "Espírito/nível"); Row("lukPerLevel", "Sorte/nível");
 
-            Section("Skills da classe");
+            Section("Skills da classe (ordem = barra de ação)");
             DrawSkillPicker();
+
+            Section("Itens iniciais (loadout)");
+            DrawStartItems();
 
             Section("Arte do cliente (não sincroniza)");
             EditorGUILayout.PropertyField(serializedObject.FindProperty("icon"), new GUIContent("Ícone"));
@@ -41,31 +44,108 @@ namespace Arcane_Aegis.EditorTools
             serializedObject.ApplyModifiedProperties();
         }
 
+        // The class's skillIds is its ORDERED action bar (slot 0 = basic = left-click / key 1). This draws the chosen
+        // skills in order with reorder (▲▼) + remove (✕), plus a dropdown to add ones not yet chosen. Empty list = the
+        // class can cast ANY skill (server gate is permissive) but then the bar/basic is undefined → author at least one.
         private void DrawSkillPicker()
         {
             var listProp = serializedObject.FindProperty("skillIds");
-            var chosen = new HashSet<int>();
-            for (int i = 0; i < listProp.arraySize; i++) chosen.Add(listProp.GetArrayElementAtIndex(i).intValue);
-
             var skills = GatherSkills();
             if (skills.Count == 0) { EditorGUILayout.HelpBox("Nenhuma skill autorada ainda.", MessageType.Info); return; }
 
-            EditorGUILayout.LabelField(chosen.Count == 0 ? "Nenhuma marcada = pode castar QUALQUER skill." : $"{chosen.Count} skill(s) marcada(s).", EditorStyles.miniLabel);
+            EditorGUILayout.LabelField(
+                listProp.arraySize == 0 ? "Vazia = pode castar QUALQUER skill (mas a básica fica indefinida — adicione ao menos uma)."
+                                        : "Ordem = barra de ação. Slot 0 = básica (clique esquerdo / tecla 1).",
+                EditorStyles.miniLabel);
 
-            foreach (var s in skills)
+            int moveFrom = -1, moveTo = -1, removeAt = -1;
+            for (int i = 0; i < listProp.arraySize; i++)
             {
-                bool was = chosen.Contains(s.id);
-                bool now = EditorGUILayout.ToggleLeft($"#{s.id}  {s.displayName}", was);
-                if (now == was) continue;
-                if (now) { listProp.arraySize++; listProp.GetArrayElementAtIndex(listProp.arraySize - 1).intValue = s.id; }
-                else RemoveValue(listProp, s.id);
+                int id = listProp.GetArrayElementAtIndex(i).intValue;
+                var so = skills.Find(s => s.id == id);
+                EditorGUILayout.BeginHorizontal();
+                EditorGUILayout.LabelField(i == 0 ? "★ básica" : $"slot {i}", GUILayout.Width(64));
+                EditorGUILayout.LabelField(so != null ? $"#{id}  {so.displayName}" : $"#{id}  (skill removida?)");
+                using (new EditorGUI.DisabledScope(i == 0)) if (GUILayout.Button("▲", GUILayout.Width(26))) { moveFrom = i; moveTo = i - 1; }
+                using (new EditorGUI.DisabledScope(i == listProp.arraySize - 1)) if (GUILayout.Button("▼", GUILayout.Width(26))) { moveFrom = i; moveTo = i + 1; }
+                if (GUILayout.Button("✕", GUILayout.Width(26))) removeAt = i;
+                EditorGUILayout.EndHorizontal();
+            }
+            if (moveFrom >= 0) listProp.MoveArrayElement(moveFrom, moveTo);
+            if (removeAt >= 0) listProp.DeleteArrayElementAtIndex(removeAt);
+
+            // Add a skill not yet in the bar (dropdown of the remaining authored skills).
+            var chosen = new HashSet<int>();
+            for (int i = 0; i < listProp.arraySize; i++) chosen.Add(listProp.GetArrayElementAtIndex(i).intValue);
+            var addable = skills.FindAll(s => !chosen.Contains(s.id));
+            if (addable.Count > 0)
+            {
+                var labels = new string[addable.Count + 1];
+                labels[0] = "+ Adicionar skill à barra...";
+                for (int i = 0; i < addable.Count; i++) labels[i + 1] = $"#{addable[i].id}  {addable[i].displayName}";
+                int pick = EditorGUILayout.Popup(0, labels);
+                if (pick > 0)
+                {
+                    listProp.arraySize++;
+                    listProp.GetArrayElementAtIndex(listProp.arraySize - 1).intValue = addable[pick - 1].id;
+                }
             }
         }
 
-        private static void RemoveValue(SerializedProperty listProp, int value)
+        // Starter loadout: each row = an item dropdown (authored items) + a quantity. The server grants these to a
+        // brand-new character of this class, at creation (Atavism-style). Empty = the class starts with nothing.
+        private void DrawStartItems()
         {
+            var listProp = serializedObject.FindProperty("startItems");
+            var items = GatherItems();
+            if (items.Count == 0) { EditorGUILayout.HelpBox("Nenhum item autorado ainda (crie um ItemDefinitionSO).", MessageType.Info); return; }
+
+            var ids = new string[items.Count];
+            var labels = new string[items.Count];
+            for (int i = 0; i < items.Count; i++)
+            {
+                ids[i] = items[i].id;
+                labels[i] = string.IsNullOrEmpty(items[i].displayName) ? items[i].id : $"{items[i].id}  ({items[i].displayName})";
+            }
+
+            EditorGUILayout.LabelField(listProp.arraySize == 0 ? "Nenhum item inicial — a classe começa sem nada." : $"{listProp.arraySize} item(ns) inicial(is) (vão pra bag).", EditorStyles.miniLabel);
+
+            int removeAt = -1;
             for (int i = 0; i < listProp.arraySize; i++)
-                if (listProp.GetArrayElementAtIndex(i).intValue == value) { listProp.DeleteArrayElementAtIndex(i); return; }
+            {
+                var entry = listProp.GetArrayElementAtIndex(i);
+                var idProp = entry.FindPropertyRelative("itemId");
+                var qtyProp = entry.FindPropertyRelative("qty");
+
+                EditorGUILayout.BeginHorizontal();
+                int cur = Mathf.Max(0, System.Array.IndexOf(ids, idProp.stringValue));
+                idProp.stringValue = ids[EditorGUILayout.Popup(cur, labels)];
+                qtyProp.intValue = Mathf.Max(1, EditorGUILayout.IntField(Mathf.Max(1, qtyProp.intValue), GUILayout.Width(60)));
+                if (GUILayout.Button("✕", GUILayout.Width(24))) removeAt = i;
+                EditorGUILayout.EndHorizontal();
+            }
+            if (removeAt >= 0) listProp.DeleteArrayElementAtIndex(removeAt);
+
+            if (GUILayout.Button("+ Adicionar item inicial"))
+            {
+                listProp.arraySize++;
+                var entry = listProp.GetArrayElementAtIndex(listProp.arraySize - 1);
+                entry.FindPropertyRelative("itemId").stringValue = ids[0];
+                entry.FindPropertyRelative("qty").intValue = 1;
+            }
+        }
+
+        private static List<ItemDefinitionSO> GatherItems()
+        {
+            var guids = AssetDatabase.FindAssets("t:ItemDefinitionSO");
+            var list = new List<ItemDefinitionSO>(guids.Length);
+            foreach (var g in guids)
+            {
+                var it = AssetDatabase.LoadAssetAtPath<ItemDefinitionSO>(AssetDatabase.GUIDToAssetPath(g));
+                if (it != null) list.Add(it);
+            }
+            list.Sort((a, b) => string.Compare(a.id, b.id, System.StringComparison.OrdinalIgnoreCase));
+            return list;
         }
 
         private static List<SkillDefinitionSO> GatherSkills()

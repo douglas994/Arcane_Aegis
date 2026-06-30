@@ -70,6 +70,26 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 0}
     m_Modifications:
+    - target: {fileID: 471613380535995294, guid: 7b2aafd3351a88e429fd8bcedba19af9, type: 3}
+      propertyPath: m_LocalPosition.x
+      value: 0.000000031358418
+      objectReference: {fileID: 0}
+    - target: {fileID: 471613380535995294, guid: 7b2aafd3351a88e429fd8bcedba19af9, type: 3}
+      propertyPath: m_LocalPosition.z
+      value: -0.18259609
+      objectReference: {fileID: 0}
+    - target: {fileID: 1351219208088921707, guid: 7b2aafd3351a88e429fd8bcedba19af9, type: 3}
+      propertyPath: serializeData2.initData.localHash
+      value: 82176
+      objectReference: {fileID: 0}
+    - target: {fileID: 1723806093385398863, guid: 7b2aafd3351a88e429fd8bcedba19af9, type: 3}
+      propertyPath: m_LocalPosition.x
+      value: 0.03543303
+      objectReference: {fileID: 0}
+    - target: {fileID: 1723806093385398863, guid: 7b2aafd3351a88e429fd8bcedba19af9, type: 3}
+      propertyPath: m_LocalPosition.z
+      value: -0.1480155
+      objectReference: {fileID: 0}
     - target: {fileID: 4038775710946836403, guid: 7b2aafd3351a88e429fd8bcedba19af9, type: 3}
       propertyPath: m_LocalPosition.x
       value: 0
@@ -110,9 +130,29 @@ PrefabInstance:
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
       objectReference: {fileID: 0}
+    - target: {fileID: 4755245270760040329, guid: 7b2aafd3351a88e429fd8bcedba19af9, type: 3}
+      propertyPath: m_LocalPosition.x
+      value: 0.039751194
+      objectReference: {fileID: 0}
+    - target: {fileID: 4755245270760040329, guid: 7b2aafd3351a88e429fd8bcedba19af9, type: 3}
+      propertyPath: m_LocalPosition.z
+      value: -0.17629588
+      objectReference: {fileID: 0}
+    - target: {fileID: 5449667234941841717, guid: 7b2aafd3351a88e429fd8bcedba19af9, type: 3}
+      propertyPath: serializeData2.initData.localHash
+      value: 52536
+      objectReference: {fileID: 0}
     - target: {fileID: 5629429850613235721, guid: 7b2aafd3351a88e429fd8bcedba19af9, type: 3}
       propertyPath: m_Name
       value: human_warrior_male
+      objectReference: {fileID: 0}
+    - target: {fileID: 7179911271295275076, guid: 7b2aafd3351a88e429fd8bcedba19af9, type: 3}
+      propertyPath: m_LocalPosition.x
+      value: 0.12710002
+      objectReference: {fileID: 0}
+    - target: {fileID: 7179911271295275076, guid: 7b2aafd3351a88e429fd8bcedba19af9, type: 3}
+      propertyPath: m_LocalPosition.z
+      value: -0.13750565
       objectReference: {fileID: 0}
     - target: {fileID: 7700336613956700672, guid: 7b2aafd3351a88e429fd8bcedba19af9, type: 3}
       propertyPath: m_Controller

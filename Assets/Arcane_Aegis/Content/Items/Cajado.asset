@@ -1,0 +1,64 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 6cbc3ae838de9fb459833115ff07a89e, type: 3}
+  m_Name: Cajado
+  m_EditorClassIdentifier: Assembly-CSharp::Arcane_Aegis.Content.ItemDefinitionSO
+  id: cajado
+  displayName: Cajado
+  type: 1
+  category: mage
+  slot: 1
+  twoHanded: 0
+  rarity: 3
+  element: 2
+  levelReq: 1
+  classReq: mage
+  statsBase:
+  - statId: 1
+    value: 100
+  - statId: 12
+    value: 200
+  - statId: 8
+    value: 250
+  - statId: 3
+    value: 10
+  - statId: 4
+    value: 15
+  rollsPossible:
+  - statId: 12
+    min: 5
+    max: 10
+  maxRolls: 0
+  effects: []
+  tierMax: 5
+  enhanceMax: 12
+  socketsMax: 6
+  durabilityMax: 100
+  weight: 50
+  sellable: 1
+  tradeable: 1
+  npcPrice: 801
+  priceCurrency: gold
+  stackMax: 10
+  icon: {fileID: 799407176, guid: 39601f2209aa2204b949b9f60886246d, type: 3}
+  description: 
+  model3D: {fileID: 8538026842634170864, guid: c3ca32fd607e74a4387344829cac3951, type: 3}
+  gripAttach:
+    bone: 
+    position: {x: -0.0046, y: 0.0561, z: 0.1682}
+    euler: {x: -108.243, y: 80.174, z: -93.70502}
+    scale: {x: 0, y: 0, z: 0}
+  sheathAttach:
+    bone: 
+    position: {x: -0.244, y: 0.142, z: 0.184}
+    euler: {x: 22.964, y: -75.409, z: -160.533}
+    scale: {x: 0, y: 0, z: 0}

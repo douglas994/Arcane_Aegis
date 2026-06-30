@@ -42,16 +42,42 @@ namespace Arcane_Aegis.Combat
         {
             SkillDefinitionSO so = Lib != null ? Lib.GetSkill(abilityId) : null;
 
-            GameObject go;
-            if (so != null && so.projectileVfx != null) go = Instantiate(so.projectileVfx);
-            else
-            {
-                go = GameObject.CreatePrimitive(PrimitiveType.Sphere); // fallback so it's visible
-                go.transform.localScale = Vector3.one * 0.4f;
-                var col = go.GetComponent<Collider>(); if (col != null) Destroy(col);
-            }
+            // We STEER a holder and KEEP the VFX prefab's own authored orientation. Many VFX packs (e.g. Vefects) build
+            // the effect along a non-Z axis and/or bake a root rotation; overwriting the prefab's rotation makes them fly
+            // sideways. The holder's +Z = travel direction; the prefab keeps its local rotation relative to the holder.
+            var go = new GameObject($"Projectile_{id}");
             go.transform.position = start;
             if (dir.sqrMagnitude > 0.0001f) go.transform.rotation = Quaternion.LookRotation(new Vector3(dir.x, 0f, dir.z));
+
+            // Muzzle flash: a short clarão at the LAUNCH point (stays there while the projectile flies). Pro launch feel.
+            if (so != null && so.muzzleVfx != null)
+            {
+                var muzzle = Instantiate(so.muzzleVfx, start, go.transform.rotation);
+                Destroy(muzzle, 0.5f); // short + sharp (industry rule of thumb)
+            }
+
+            if (so != null && so.projectileVfx != null)
+            {
+                var vfx = Instantiate(so.projectileVfx);
+                vfx.transform.SetParent(go.transform, worldPositionStays: false);
+                vfx.transform.localPosition = Vector3.zero;
+                vfx.transform.localRotation = Quaternion.Euler(so.projectileVfxEuler); // artist knob: dial until it flies along +Z
+
+                // Neutralize a VFX pack's OWN projectile logic so you can drop the raw prefab (e.g. Vefects
+                // MagicAttacks_Projectile) without it fighting our server-authoritative flight: kill its scripts +
+                // physics. ParticleSystem/Renderer/Light/Trail are built-in Components (NOT MonoBehaviours) → they survive.
+                foreach (var mb in vfx.GetComponentsInChildren<MonoBehaviour>(true)) Destroy(mb);
+                foreach (var col in vfx.GetComponentsInChildren<Collider>(true)) Destroy(col);
+                foreach (var rb in vfx.GetComponentsInChildren<Rigidbody>(true)) Destroy(rb);
+            }
+            else
+            {
+                var sphere = GameObject.CreatePrimitive(PrimitiveType.Sphere); // fallback so it's visible
+                sphere.transform.SetParent(go.transform, worldPositionStays: false);
+                sphere.transform.localPosition = Vector3.zero;
+                sphere.transform.localScale = Vector3.one * 0.4f;
+                var col = sphere.GetComponent<Collider>(); if (col != null) Destroy(col);
+            }
 
             _live[id] = new Live { go = go, abilityId = abilityId, dir = dir.normalized, speed = speed, life = speed > 0f ? range / speed + 0.5f : 1f };
         }
@@ -59,11 +85,13 @@ namespace Arcane_Aegis.Combat
         public void Despawn(uint id, bool hit)
         {
             if (!_live.TryGetValue(id, out var l)) return;
-            if (hit && l.go != null)
+            // On a HIT the server sends an S2C_CombatEvent → CombatFx shows the impact at the REAL target position
+            // (accurate). So we DON'T spawn one here (that one used the predicted projectile pos → landed near the
+            // caster = a phantom "hit on me", plus a double). Only a MISS (wall/range; no combat event) gets a fizzle.
+            if (!hit && l.go != null)
             {
                 var so = Lib != null ? Lib.GetSkill(l.abilityId) : null;
                 if (so != null && so.impactVfx != null) Instantiate(so.impactVfx, l.go.transform.position, Quaternion.identity);
-                else FxFlash.Spawn(l.go.transform.position, new Color(1f, 0.85f, 0.4f, 0.9f), 1.1f, 0.3f); // default impact
             }
             if (l.go != null) Destroy(l.go);
             _live.Remove(id);

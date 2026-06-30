@@ -16,6 +16,11 @@ namespace Arcane_Aegis.Content
         [Tooltip("Ability ids esta classe pode castar. Vazio = sem restrição (qualquer skill).")]
         public List<int> skillIds = new();
 
+        /// <summary>One line of the class's starting loadout: an item id + quantity (granted at character creation).</summary>
+        [System.Serializable] public struct StartItem { public string itemId; public int qty; }
+        [Tooltip("Itens iniciais (loadout) dados a um personagem NOVO desta classe — concedidos na criação, estilo Atavism. Vão pra bag.")]
+        public List<StartItem> startItems = new();
+
         [Header("Client art — NOT synced (model lives on the CharacterTemplate)")]
         public Sprite icon;
         [TextArea] public string description;

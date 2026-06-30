@@ -26,6 +26,9 @@ MonoBehaviour:
   vitPerLevel: 1
   spiPerLevel: 0
   lukPerLevel: 0
+  skillIds: 03000000
+  startItems:
+  - itemId: sword
+    qty: 1
   icon: {fileID: 0}
-  modelPrefab: {fileID: 0}
   description: 

@@ -10,8 +10,8 @@ namespace Arcane_Aegis.UI
 {
     /// <summary>
     /// The shop window: a BUY list (the vendor's stock, priced by each item's npcPrice/currency) and a SELL list (your
-    /// sellable bag items, at a fraction of the price). Buy/Sell ask the server (it validates range/gold/space). Opened by
-    /// <see cref="ShopController"/> near a vendor. You build the UI: a row prefab (ShopRow) + two list parents.
+    /// sellable bag items, at a fraction of the price). Buy/Sell ask the server (it validates range/gold/space). Opened
+    /// from a vendor NPC's dialogue ("Loja" → <see cref="Open"/>). You build the UI: a row prefab (ShopRow) + two list parents.
     /// </summary>
     public class ShopPanel : MonoBehaviour
     {
@@ -28,7 +28,7 @@ namespace Arcane_Aegis.UI
 
         private readonly List<GameObject> _buyRows = new();
         private readonly List<GameObject> _sellRows = new();
-        private VendorDefinitionSO _vendor;
+        private NpcDefinitionSO _vendor; // the vendor NPC whose shop is open (its stock + name)
 
         private void Awake() { Instance = this; if (panel != null) panel.SetActive(false); }
         private void OnDestroy() { if (Instance == this) Instance = null; }
@@ -36,12 +36,13 @@ namespace Arcane_Aegis.UI
         private void OnEnable() { if (InventoryStore.Instance != null) InventoryStore.Instance.OnChanged += RebuildSell; }
         private void OnDisable() { if (InventoryStore.Instance != null) InventoryStore.Instance.OnChanged -= RebuildSell; }
 
-        /// <summary>Opens the shop for a vendor id (resolved from the ContentLibrary).</summary>
+        /// <summary>Opens the shop for a vendor NPC id (resolved from the ContentLibrary; its stock is on the NpcDefinition).</summary>
         public void Open(string vendorId)
         {
-            if (library == null) return;
-            _vendor = library.GetVendor(vendorId);
-            if (_vendor == null) return;
+            if (library == null) { Debug.LogWarning("[Shop] ContentLibrary não está ligado no ShopPanel (campo 'library')."); return; }
+            _vendor = library.GetNpc(vendorId);
+            if (_vendor == null) { Debug.LogWarning($"[Shop] NPC '{vendorId}' não está na ContentLibrary — rode 'Coletar' no Content Editor."); return; }
+            if (!_vendor.Sells) { Debug.LogWarning($"[Shop] NPC '{vendorId}' não é Vendor (Tipo != Vendor) — sem loja."); return; }
             if (titleLabel != null) titleLabel.text = string.IsNullOrEmpty(_vendor.displayName) ? _vendor.name : _vendor.displayName;
             if (panel != null) panel.SetActive(true);
             RebuildBuy();

@@ -54,8 +54,9 @@ namespace Arcane_Aegis.Controllers.Locomotion
             SpeedMult = speedMult > 0f ? speedMult : 0f;
         }
 
-        /// <summary>True while Dash (Shift) is held.</summary>
-        public bool Dashing => Input != null && Input.DashHeld;
+        /// <summary>True while Dash/sprint (Shift) is held AND there's stamina left (survival v2 — gated client-side; the
+        /// server owns the stamina value). At 0 stamina, sprinting stops and you drop to RunSpeed until it regenerates.</summary>
+        public bool Dashing => Input != null && Input.DashHeld && Arcane_Aegis.UI.SurvivalState.Stamina > 0;
         /// <summary>Ground move speed: jog by default, dash while Shift is held (scaled by any slow).</summary>
         public float CurrentSpeed => (Dashing ? DashSpeed : RunSpeed) * SpeedMult * MountMult;
 

@@ -125,9 +125,15 @@ namespace Arcane_Aegis.EditorTools
                 // Currencies: authored as SOs; synced to the TYPED Currency table (see SyncAll).
                 new() { Name = "Currencies", Icon = "💰", SoType = typeof(CurrencyDefinitionSO), Folder = "Currencies", ToContent = null },
                 // Vendors: authored as SOs; synced to the TYPED Vendor table (see SyncAll).
-                new() { Name = "Vendors", Icon = "🏪", SoType = typeof(VendorDefinitionSO), Folder = "Vendors", ToContent = null },
+                // NPCs (falantes + vendedores): modelo + diálogo são arte do cliente; um NPC tipo Vendor TAMBÉM tem
+                // estoque, que sincroniza pra tabela de vendor do server (chaveada pelo id do NPC). Veja SyncAll.
+                new() { Name = "NPCs", Icon = "🗣", SoType = typeof(NpcDefinitionSO), Folder = "Npcs", ToContent = null },
+                // Quests: synced to content.db (server owns objectives/rewards). A QuestGiver NPC references which it offers.
+                new() { Name = "Quests", Icon = "🗺", SoType = typeof(QuestDefinitionSO), Folder = "Quests", ToContent = null },
                 new() { Name = "Pets", Icon = "P", SoType = typeof(PetDefinitionSO), Folder = "Pets", ToContent = null },
                 new() { Name = "Mounts", Icon = "M", SoType = typeof(MountDefinitionSO), Folder = "Mounts", ToContent = null },
+                // Building pieces (open-world construction): authored as SOs; synced to the TYPED BuildingDef table (see SyncAll).
+                new() { Name = "Buildings", Icon = "🏠", SoType = typeof(BuildingDefinitionSO), Folder = "Buildings", ToContent = null },
             };
         }
 
@@ -209,10 +215,16 @@ namespace Arcane_Aegis.EditorTools
             foreach (var so in FindAllOf<CurrencyDefinitionSO>())
                 if (!string.IsNullOrWhiteSpace(so.id)) { Send(new I_Db_UpsertCurrency { Currency = ToCurrencyRecord(so) }); currencies++; }
 
-            // Vendors → the TYPED Vendor/VendorStock tables.
+            // Vendor NPCs → the TYPED Vendor/VendorStock tables (keyed by the NPC id). A Vendor-type NPC carries its
+            // own stock; the server validates buys against this. Non-vendor NPCs don't sync (dialogue is client art).
             int vendors = 0;
-            foreach (var so in FindAllOf<VendorDefinitionSO>())
-                if (!string.IsNullOrWhiteSpace(so.id)) { Send(new I_Db_UpsertVendor { Vendor = ToVendorRecord(so) }); vendors++; }
+            foreach (var so in FindAllOf<NpcDefinitionSO>())
+                if (so.type == NpcDefinitionSO.NpcType.Vendor && !string.IsNullOrWhiteSpace(so.id)) { Send(new I_Db_UpsertVendor { Vendor = ToVendorRecord(so) }); vendors++; }
+
+            // Quests → the TYPED Quest/QuestObjective/QuestReward tables (the server owns objectives + rewards).
+            int quests = 0;
+            foreach (var so in FindAllOf<QuestDefinitionSO>())
+                if (!string.IsNullOrWhiteSpace(so.id)) { Send(new I_Db_UpsertQuest { Quest = ToQuestRecord(so) }); quests++; }
 
             // Pets + Mounts → the TYPED Pet/Mount tables.
             int pets = 0;
@@ -222,7 +234,12 @@ namespace Arcane_Aegis.EditorTools
             foreach (var so in FindAllOf<MountDefinitionSO>())
                 if (!string.IsNullOrWhiteSpace(so.id)) { Send(new I_Db_UpsertMount { Mount = ToMountRecord(so) }); mounts++; }
 
-            _status = $"Mirror ✓ — {items} item(ns) + {races.Length}r/{classes.Length}c/{genders.Length}g + {skills} skill(s) + {statuses} status(es) + {monsters} monstro(s) + {nodes} nó(s) + {recipes} receita(s) + {currencies} moeda(s) + {vendors} vendedor(es) + {pets} pet(s) + {mounts} montaria(s).";
+            // Building pieces → the TYPED BuildingDef/BuildingDefIngredient tables in content.db (open-world building).
+            int buildings = 0;
+            foreach (var so in FindAllOf<BuildingDefinitionSO>())
+                if (!string.IsNullOrWhiteSpace(so.id)) { Send(new I_Db_UpsertBuildingDef { Def = ToBuildingDefRecord(so) }); buildings++; }
+
+            _status = $"Mirror ✓ — {items} item(ns) + {races.Length}r/{classes.Length}c/{genders.Length}g + {skills} skill(s) + {statuses} status(es) + {monsters} monstro(s) + {nodes} nó(s) + {recipes} receita(s) + {currencies} moeda(s) + {vendors} vendedor(es) + {quests} quest(s) + {pets} pet(s) + {mounts} montaria(s) + {buildings} peça(s) de construção.";
         }
 
         /// <summary>ItemDefinitionSO → the server's ItemTemplate. The SO uses the shared enums directly (no parsing);
@@ -385,6 +402,23 @@ namespace Arcane_Aegis.EditorTools
                 Profession = (byte)so.profession, RequiredLevel = (ushort)Mathf.Max(1, so.requiredLevel),
                 CraftSeconds = so.craftSeconds, XpReward = (uint)Mathf.Max(0, so.xpReward),
                 OutputItemId = so.output != null ? so.output.id : "", OutputQty = Mathf.Max(1, so.outputQty),
+                Station = (byte)(so.requiresCampfire ? 1 : 0),
+                Ingredients = ings.ToArray(),
+            };
+        }
+
+        /// <summary>BuildingDefinitionSO → the server's BuildingDefRecord (ingredients emit their template ids).</summary>
+        private static BuildingDefRecord ToBuildingDefRecord(BuildingDefinitionSO so)
+        {
+            var ings = new System.Collections.Generic.List<BuildingDefRecord.Ingredient>();
+            if (so.ingredients != null)
+                foreach (var ing in so.ingredients)
+                    if (ing.item != null && !string.IsNullOrWhiteSpace(ing.item.id) && ing.qty > 0)
+                        ings.Add(new BuildingDefRecord.Ingredient { ItemId = ing.item.id, Qty = ing.qty });
+            return new BuildingDefRecord
+            {
+                Id = so.id, Name = so.displayName ?? "",
+                MaxIntegrity = so.maxIntegrity < 1 ? (ushort)100 : so.maxIntegrity,
                 Ingredients = ings.ToArray(),
             };
         }
@@ -431,14 +465,36 @@ namespace Arcane_Aegis.EditorTools
             CanFly = (byte)(so.canFly ? 1 : 0),
         };
 
-        /// <summary>VendorDefinitionSO → VendorRecord (stock emits each item's template id).</summary>
-        private static VendorRecord ToVendorRecord(VendorDefinitionSO so)
+        /// <summary>A Vendor-type NpcDefinitionSO → VendorRecord (id = NPC id; stock emits each item's template id).</summary>
+        private static VendorRecord ToVendorRecord(NpcDefinitionSO so)
         {
             var stock = new System.Collections.Generic.List<string>();
             if (so.stock != null)
                 foreach (var it in so.stock)
                     if (it != null && !string.IsNullOrWhiteSpace(it.id)) stock.Add(it.id);
             return new VendorRecord { Id = so.id, Name = so.displayName ?? "", StockItemIds = stock.ToArray() };
+        }
+
+        /// <summary>QuestDefinitionSO → QuestRecord (objectives + item rewards emit ids; kind maps 1:1 to the wire enum).</summary>
+        private static QuestRecord ToQuestRecord(QuestDefinitionSO so)
+        {
+            var objs = new System.Collections.Generic.List<QuestObjectiveRec>();
+            if (so.objectives != null)
+                foreach (var o in so.objectives)
+                    if (!string.IsNullOrWhiteSpace(o.targetId))
+                        objs.Add(new QuestObjectiveRec { Kind = (byte)o.kind, TargetId = o.targetId, Count = Mathf.Max(1, o.count) });
+            var rewards = new System.Collections.Generic.List<QuestRewardItem>();
+            if (so.rewardItems != null)
+                foreach (var it in so.rewardItems)
+                    if (it.item != null && !string.IsNullOrWhiteSpace(it.item.id) && it.qty > 0)
+                        rewards.Add(new QuestRewardItem { ItemId = it.item.id, Qty = it.qty });
+            return new QuestRecord
+            {
+                Id = so.id, Name = so.displayName ?? "", Description = so.description ?? "",
+                LevelReq = so.levelReq, Objectives = objs.ToArray(),
+                RewardXp = so.rewardXp, RewardCurrency = so.rewardCurrency ?? "", RewardCurrencyAmount = so.rewardCurrencyAmount,
+                RewardItems = rewards.ToArray(), Repeatable = so.repeatable,
+            };
         }
 
         /// <summary>StatusDefinitionSO → the server's StatusRecord.</summary>
@@ -497,6 +553,7 @@ namespace Arcane_Aegis.EditorTools
                     StrPerLevel = c.strPerLevel, DexPerLevel = c.dexPerLevel, IntPerLevel = c.intPerLevel,
                     VitPerLevel = c.vitPerLevel, SpiPerLevel = c.spiPerLevel, LukPerLevel = c.lukPerLevel,
                     SkillIds = ToSkillIdBytes(c.skillIds),
+                    StartItems = ToStartItems(c.startItems),
                 };
             }
             return arr;
@@ -521,6 +578,17 @@ namespace Arcane_Aegis.EditorTools
             var arr = new byte[seen.Count]; seen.CopyTo(arr); return arr;
         }
 
+        /// <summary>Class starter loadout (SO list) → the wire DTO (drop blanks/non-positive qty; qty clamped to ≥1).</summary>
+        private static ClassRecord.StartItem[] ToStartItems(List<ClassDefinitionSO.StartItem> items)
+        {
+            if (items == null || items.Count == 0) return System.Array.Empty<ClassRecord.StartItem>();
+            var list = new List<ClassRecord.StartItem>(items.Count);
+            foreach (var s in items)
+                if (!string.IsNullOrWhiteSpace(s.itemId))
+                    list.Add(new ClassRecord.StartItem { ItemId = s.itemId.Trim(), Qty = System.Math.Max(1, s.qty) });
+            return list.ToArray();
+        }
+
         private void CollectIntoLibrary()
         {
             var found = FindAllOf<ContentLibrary>();
@@ -536,9 +604,12 @@ namespace Arcane_Aegis.EditorTools
             lib.resourceNodes = new List<ResourceNodeDefinitionSO>(FindAllOf<ResourceNodeDefinitionSO>());
             lib.recipes = new List<RecipeDefinitionSO>(FindAllOf<RecipeDefinitionSO>());
             lib.currencies = new List<CurrencyDefinitionSO>(FindAllOf<CurrencyDefinitionSO>());
-            lib.vendors = new List<VendorDefinitionSO>(FindAllOf<VendorDefinitionSO>());
             lib.pets = new List<PetDefinitionSO>(FindAllOf<PetDefinitionSO>());
             lib.mounts = new List<MountDefinitionSO>(FindAllOf<MountDefinitionSO>());
+            lib.npcs = new List<NpcDefinitionSO>(FindAllOf<NpcDefinitionSO>());
+            lib.quests = new List<QuestDefinitionSO>(FindAllOf<QuestDefinitionSO>());
+            lib.dungeons = new List<DungeonDefinitionSO>(FindAllOf<DungeonDefinitionSO>());
+            lib.buildingDefs = new List<BuildingDefinitionSO>(FindAllOf<BuildingDefinitionSO>());
             EditorUtility.SetDirty(lib);
             AssetDatabase.SaveAssets();
             _status = $"ContentLibrary: {lib.classes.Count} classes, {lib.races.Count} raças, {lib.genders.Count} gêneros, {lib.templates.Count} templates, {lib.items.Count} itens, {lib.skills.Count} skills, {lib.statuses.Count} status, {lib.monsters.Count} monstros.";
@@ -632,9 +703,11 @@ namespace Arcane_Aegis.EditorTools
             int n = 0;
             foreach (var mk in markers)
             {
-                // priority: vendor > node > monster; skip empty markers.
+                // priority: portal > npc (inclui vendedores) > node > monster; skip empty markers.
                 byte kind; string contentId;
-                if (mk.vendor != null && !string.IsNullOrWhiteSpace(mk.vendor.id)) { kind = 2; contentId = mk.vendor.id; }
+                if (mk.portal) { kind = 4; contentId = mk.dungeonDef.ToString(); } // dungeon portal: contentId = template id ("100") or "0" (exit)
+                else if (mk.campfire) { kind = 5; contentId = "campfire"; } // cooking station (campfire)
+                else if (mk.npc != null && !string.IsNullOrWhiteSpace(mk.npc.id)) { kind = 3; contentId = mk.npc.id; }
                 else if (mk.node != null && !string.IsNullOrWhiteSpace(mk.node.id)) { kind = 1; contentId = mk.node.id; }
                 else if (mk.monster != null && !string.IsNullOrWhiteSpace(mk.monster.id)) { kind = 0; contentId = mk.monster.id; }
                 else continue;
@@ -739,7 +812,8 @@ namespace Arcane_Aegis.EditorTools
                     if (_inspector != null) DestroyImmediate(_inspector);
                     _inspector = Editor.CreateEditor(_selected);
                 }
-                _inspector.OnInspectorGUI();
+                if (_inspector != null) _inspector.OnInspectorGUI();        // CreateEditor can briefly return null (asset just created / domain reload) → don't NRE + corrupt the layout
+                else EditorGUILayout.HelpBox("Recarregando o inspector deste asset…", MessageType.Info);
                 EditorGUILayout.EndScrollView();
             }
         }

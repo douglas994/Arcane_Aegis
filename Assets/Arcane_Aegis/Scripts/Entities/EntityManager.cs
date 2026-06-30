@@ -8,6 +8,7 @@ using Arcane_Aegis.Network;
 using Arcane_Aegis.Content;
 using Arcane_Aegis.Controllers;
 using Arcane_Aegis.Controllers.Locomotion;
+using Arcane_Aegis.Effects;
 
 namespace Arcane_Aegis.Entities
 {
@@ -66,7 +67,13 @@ namespace Arcane_Aegis.Entities
             else if (data.Type == EntityType.Player)
                 foreach (var kv in _views)
                     if (kv.Value is MountView m && m.RiderId == data.EntityId) TrySeatMountRider(m);
+
+            if (ShouldDissolve(data.Type)) DissolveEffect.PlayIn(view.gameObject); // materialize-in for mobs/pets/mounts
         }
+
+        /// <summary>Which entity types get the spawn/despawn dissolve (creatures + companions — not players/nodes/loot).</summary>
+        private static bool ShouldDissolve(EntityType t)
+            => t is EntityType.Monster or EntityType.Boss or EntityType.Pet or EntityType.Mount;
 
         /// <summary>Parents a remote rider onto its mount's seat (interpolation off → it moves with the mount). No-op
         /// until both the mount and the rider exist.</summary>
@@ -120,8 +127,13 @@ namespace Arcane_Aegis.Entities
                 rider.SetInterpolated(true);
             }
 
-            Destroy(view.gameObject);
-            _views.Remove(id);
+            _views.Remove(id); // out of play immediately (no more snapshots/targeting) — the corpse may linger to dissolve
+            if (ShouldDissolve(view.Type) && view != null)
+            {
+                var go = view.gameObject;
+                DissolveEffect.PlayOut(go, 0.6f, null, () => { if (go != null) Destroy(go); }); // burn away, then remove
+            }
+            else Destroy(view.gameObject);
         }
 
         /// <summary>Zone change (border handoff): re-home OUR player on the new continent — drop the old continent's
@@ -221,9 +233,12 @@ namespace Arcane_Aegis.Entities
             if (model == null && library != null && !string.IsNullOrEmpty(monsterId))
             {
                 if (type == EntityType.ResourceNode) { var nd = library.GetResourceNode(monsterId); if (nd != null && nd.model3D != null) model = nd.model3D; }
-                else if (type == EntityType.Vendor) { var vd = library.GetVendor(monsterId); if (vd != null && vd.model3D != null) model = vd.model3D; }
                 else if (type == EntityType.Seal) { var md = library.GetMonster(monsterId); if (md != null && md.sealModel3D != null) model = md.sealModel3D; } // seal altar art
                 else if (type == EntityType.Pet) { var pd = library.GetPet(monsterId); if (pd != null && pd.model3D != null) model = pd.model3D; } // pet model from PetDefinition
+                else if (type == EntityType.Npc) { var nd = library.GetNpc(monsterId); if (nd != null && nd.model3D != null) model = nd.model3D; } // talking NPC model from NpcDefinition
+                else if (type == EntityType.Portal) { if (library.portalPrefab != null) model = library.portalPrefab; } // dungeon portal: one generic prefab for all
+                else if (type == EntityType.Campfire) { if (library.campfirePrefab != null) model = library.campfirePrefab; } // cooking station: one generic prefab
+                else if (type == EntityType.Building) { var bd = library.GetBuildingDef(monsterId); if (bd != null && bd.prefab != null) model = bd.prefab; } // placed structure: the piece's own prefab by id
                 else { var md = library.GetMonster(monsterId); if (md != null && md.model3D != null) model = md.model3D; }
             }
 
@@ -243,11 +258,18 @@ namespace Arcane_Aegis.Entities
             }
             go.name = $"Entity_{id}_{name}";
 
+            // A placed structure is a STATIC, server-authoritative prop: strip any Rigidbody so gravity/physics can't make
+            // it fall, topple, or slide off a wall after placement (it stays exactly where the server put it). Colliders
+            // are kept (so you can aim/stack on it and the player can't walk through it).
+            if (type == EntityType.Building)
+                foreach (var rb in go.GetComponentsInChildren<Rigidbody>()) Destroy(rb);
+
             EntityView view = go.GetComponent<EntityView>();
             if (view == null) view = type switch // players need the control stack; pets/mounts get their own thin views; nodes/mobs a plain view
             {
                 EntityType.Player => go.AddComponent<PlayerView>(),
                 EntityType.Pet => go.AddComponent<PetView>(),
+                EntityType.Npc => go.AddComponent<NpcView>(),   // talking/town NPC (humanoid view: idle anim + interpolation)
                 _ => go.AddComponent<EntityView>(), // Mount handled earlier (rig prefab)
             };
             view.ContentId = monsterId ?? ""; // replicated def id (monster/node/vendor) — used to resolve vendor shop, etc.
@@ -288,7 +310,7 @@ namespace Arcane_Aegis.Entities
                     if (typePrefabs[i].type == type && typePrefabs[i].prefab != null)
                         return typePrefabs[i].prefab;
             // Monsters/nodes/seals fall back to "model IS the entity" (no player-prefab capsule) unless a dedicated prefab is set.
-            return type is EntityType.Monster or EntityType.ResourceNode or EntityType.Vendor or EntityType.Seal or EntityType.Pet or EntityType.Mount or EntityType.ItemDrop ? null : characterPrefab;
+            return type is EntityType.Monster or EntityType.ResourceNode or EntityType.Vendor or EntityType.Seal or EntityType.Pet or EntityType.Mount or EntityType.ItemDrop or EntityType.Npc or EntityType.Building ? null : characterPrefab;
         }
 
         /// <summary>Nearest resource node within <paramref name="range"/> of a world position (for "press to gather").</summary>
@@ -297,11 +319,29 @@ namespace Arcane_Aegis.Entities
         /// <summary>Nearest sealed-boss altar within <paramref name="range"/> of a world position (for "press to break seal").</summary>
         public EntityView NearestSeal(Vector3 worldPos, float range) => Nearest(worldPos, range, EntityType.Seal);
 
-        /// <summary>Nearest vendor within <paramref name="range"/> of a world position (for "press to shop").</summary>
-        public EntityView NearestVendor(Vector3 worldPos, float range) => Nearest(worldPos, range, EntityType.Vendor);
+        /// <summary>Nearest NPC within <paramref name="range"/> of a world position (talk/shop — vendors are NPCs now).</summary>
+        public EntityView NearestNpc(Vector3 worldPos, float range) => Nearest(worldPos, range, EntityType.Npc);
 
         /// <summary>Nearest ground-loot drop within <paramref name="range"/> of a world position (for auto/keypress pickup).</summary>
         public EntityView NearestItemDrop(Vector3 worldPos, float range) => Nearest(worldPos, range, EntityType.ItemDrop);
+
+        /// <summary>Nearest dungeon portal within <paramref name="range"/> of a world position (for "press to enter/exit").</summary>
+        public EntityView NearestPortal(Vector3 worldPos, float range) => Nearest(worldPos, range, EntityType.Portal);
+
+        /// <summary>Nearest placed structure within <paramref name="range"/> of a world position (for "press to demolish").</summary>
+        public EntityView NearestBuilding(Vector3 worldPos, float range) => Nearest(worldPos, range, EntityType.Building);
+
+        /// <summary>All placed structures within <paramref name="range"/> of a world position (for build-mode socket snapping).</summary>
+        public void CollectBuildings(List<EntityView> into, Vector3 worldPos, float range)
+        {
+            into.Clear();
+            float r2 = range * range;
+            foreach (var v in _views.Values)
+            {
+                if (v == null || v.Type != EntityType.Building) continue;
+                if ((v.transform.position - worldPos).sqrMagnitude <= r2) into.Add(v);
+            }
+        }
 
         private EntityView Nearest(Vector3 worldPos, float range, EntityType type)
         {

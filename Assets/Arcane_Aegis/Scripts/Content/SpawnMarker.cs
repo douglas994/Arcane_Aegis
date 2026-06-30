@@ -15,8 +15,19 @@ namespace Arcane_Aegis.Content
         public MonsterDefinitionSO monster;
         [Tooltip("Nó de recurso a spawnar (árvore/pedra). Tem prioridade sobre o monstro.")]
         public ResourceNodeDefinitionSO node;
-        [Tooltip("Vendedor a spawnar (NPC de loja). Tem prioridade sobre nó e monstro.")]
-        public VendorDefinitionSO vendor;
+        [Tooltip("NPC (falante/vendedor/guarda…). Tem prioridade sobre nó e monstro. Vendedor = NpcDefinition tipo Vendor.")]
+        public NpcDefinitionSO npc;
+
+        [Header("Portal de dungeon (opcional — tem prioridade sobre tudo)")]
+        [Tooltip("Marque pra este marcador ser um PORTAL de dungeon (ignora monstro/nó/npc).")]
+        public bool portal;
+        [Tooltip("Template da dungeon a entrar (>0, ex: 100). 0 = portal de SAÍDA (coloque DENTRO da dungeon → volta pro mundo).")]
+        public int dungeonDef;
+
+        [Header("Fogueira / estação de cozinha (opcional)")]
+        [Tooltip("Marque pra este marcador ser uma FOGUEIRA — receitas de cozinha precisam de uma por perto (ignora monstro/nó/npc/portal).")]
+        public bool campfire;
+
         [Min(1)] public int count = 1;
         [Min(0f)] public float radius = 5f;
         [Tooltip("Segundos pra reviver cada criatura. 0 = não respawna (chefe/evento).")]
@@ -34,8 +45,10 @@ namespace Arcane_Aegis.Content
 
         private void OnDrawGizmos()
         {
-            // yellow = vendor, green = resource node, red = monster, grey = empty.
-            Color c = vendor != null ? new Color(1f, 0.85f, 0.2f, 1f)
+            // magenta = portal, orange = campfire, cyan = npc, green = resource node, red = monster, grey = empty.
+            Color c = portal ? new Color(0.85f, 0.3f, 1f, 1f)
+                    : campfire ? new Color(1f, 0.55f, 0.1f, 1f)
+                    : npc != null ? new Color(0.3f, 0.8f, 1f, 1f)
                     : node != null ? new Color(0.3f, 0.85f, 0.3f, 1f)
                     : monster != null ? new Color(1f, 0.4f, 0.2f, 1f)
                     : new Color(0.6f, 0.6f, 0.6f, 1f);
@@ -58,7 +71,9 @@ namespace Arcane_Aegis.Content
                 }
             }
 #if UNITY_EDITOR
-            string name = vendor != null ? (string.IsNullOrEmpty(vendor.displayName) ? vendor.name : vendor.displayName)
+            string name = portal ? (dungeonDef > 0 ? $"Portal → dungeon {dungeonDef}" : "Portal de SAÍDA")
+                        : campfire ? "Fogueira (cozinha)"
+                        : npc != null ? (string.IsNullOrEmpty(npc.displayName) ? npc.name : npc.displayName)
                         : node != null ? (string.IsNullOrEmpty(node.displayName) ? node.name : node.displayName)
                         : monster != null ? (string.IsNullOrEmpty(monster.displayName) ? monster.name : monster.displayName)
                         : "(vazio)";

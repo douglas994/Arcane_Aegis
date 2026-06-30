@@ -1,0 +1,23 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e92a2ff111048fb4da533792cf9aac4d, type: 3}
+  m_Name: Parede
+  m_EditorClassIdentifier: Assembly-CSharp::Arcane_Aegis.Content.BuildingDefinitionSO
+  id: parede
+  displayName: Parede
+  maxIntegrity: 100
+  ingredients:
+  - item: {fileID: 11400000, guid: a096f8a7c04cf704cbaac2ec7bfa8c3c, type: 2}
+    qty: 20
+  prefab: {fileID: 3204676735973550815, guid: d64d3ecb7e3e0674a88a9f179e0abb9b, type: 3}
+  icon: {fileID: 0}
+  description: 

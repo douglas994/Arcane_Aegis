@@ -92,7 +92,9 @@ namespace Arcane_Aegis.Controllers
             float normalized = maxSpeed > 0.01f ? Mathf.Clamp01(rawSpeed / maxSpeed) : rawSpeed;
 
             if (_hasSpeed) animator.SetFloat(_speedHash, normalized, speedDamp, Time.deltaTime);
-            if (_hasGrounded) animator.SetBool(_groundedHash, State != MovementState.Airborne && State != MovementState.Dead);
+            // Grounded stays TRUE while Dead (the corpse is on the ground). If we forced it false here, the Any-State→
+            // Airborne transition (Grounded==false) would fire on death and fight the Death state → wrong anim.
+            if (_hasGrounded) animator.SetBool(_groundedHash, State != MovementState.Airborne);
         }
 
         /// <summary>Use the local FSM as the speed/state source (local player).</summary>

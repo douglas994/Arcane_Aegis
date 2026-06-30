@@ -28,9 +28,20 @@ namespace Arcane_Aegis.Content
         public List<ResourceNodeDefinitionSO> resourceNodes = new();
         public List<RecipeDefinitionSO> recipes = new();
         public List<CurrencyDefinitionSO> currencies = new();
-        public List<VendorDefinitionSO> vendors = new();
         public List<PetDefinitionSO> pets = new();
         public List<MountDefinitionSO> mounts = new();
+        public List<NpcDefinitionSO> npcs = new();
+        public List<QuestDefinitionSO> quests = new();
+        public List<DungeonDefinitionSO> dungeons = new();
+        public List<BuildingDefinitionSO> buildingDefs = new();
+
+        /// <summary>One generic 3D prefab/model for ALL dungeon portals (entrance + exit render the same for now). Assign
+        /// by hand. The server replicates portals as <c>EntityType.Portal</c>; the client renders this prefab for them.</summary>
+        public GameObject portalPrefab;
+
+        /// <summary>One generic 3D prefab for ALL campfires (cooking stations). The server replicates them as
+        /// <c>EntityType.Campfire</c>; the client renders this prefab. Stand near one to craft "cooking" recipes.</summary>
+        public GameObject campfirePrefab;
 
         public ClassDefinitionSO GetClass(string id) => classes.Find(c => c != null && c.id == id);
         public RaceDefinitionSO GetRace(string id) => races.Find(r => r != null && r.id == id);
@@ -43,9 +54,12 @@ namespace Arcane_Aegis.Content
         public ResourceNodeDefinitionSO GetResourceNode(string id) => resourceNodes.Find(n => n != null && n.id == id);
         public RecipeDefinitionSO GetRecipe(string id) => recipes.Find(r => r != null && r.id == id);
         public CurrencyDefinitionSO GetCurrency(string id) => currencies.Find(c => c != null && c.id == id);
-        public VendorDefinitionSO GetVendor(string id) => vendors.Find(v => v != null && v.id == id);
         public PetDefinitionSO GetPet(string id) => pets.Find(p => p != null && p.id == id);       // pet model/icon by id
         public MountDefinitionSO GetMount(string id) => mounts.Find(m => m != null && m.id == id);  // mount model/icon by id
+        public NpcDefinitionSO GetNpc(string id) => npcs.Find(n => n != null && n.id == id);          // npc model + dialogue by id
+        public QuestDefinitionSO GetQuest(string id) => quests.Find(q => q != null && q.id == id);     // quest def by id
+        public DungeonDefinitionSO GetDungeon(byte id) => dungeons.Find(d => d != null && d.id == id);   // dungeon def (scene) by template id
+        public BuildingDefinitionSO GetBuildingDef(string id) => buildingDefs.Find(b => b != null && b.id == id); // building-piece def (prefab/cost) by id
 
         /// <summary>The 3D model for a character's look: the CharacterTemplate matched by race+class, then that
         /// gender's model. Falls back to same-race (any class), then any template with a model. Null if none.

@@ -26,15 +26,18 @@ MonoBehaviour:
   - {fileID: 11400000, guid: 6e8f1dbbe0801894a869a25122cbd0e8, type: 2}
   - {fileID: 11400000, guid: c6bac68af96079c4ea819c1e69a3b292, type: 2}
   templates:
-  - {fileID: 11400000, guid: dcdaf2157f7bb0f47a7846bf2417e13e, type: 2}
-  - {fileID: 11400000, guid: d57c0f4fb7a8de240bf2a2cfa149db5d, type: 2}
   - {fileID: 11400000, guid: ddb35a1ff8fa58b48a4e07863f4d92c2, type: 2}
+  - {fileID: 11400000, guid: d57c0f4fb7a8de240bf2a2cfa149db5d, type: 2}
+  - {fileID: 11400000, guid: dcdaf2157f7bb0f47a7846bf2417e13e, type: 2}
   items:
+  - {fileID: 11400000, guid: d3ad4b1f314eca54183cc1a786319419, type: 2}
   - {fileID: 11400000, guid: fcf689e414a49784a99e17886630ff50, type: 2}
   - {fileID: 11400000, guid: a096f8a7c04cf704cbaac2ec7bfa8c3c, type: 2}
   - {fileID: 11400000, guid: 1445cb1f9f596524fbe5107dc34a4858, type: 2}
   skills:
   - {fileID: 11400000, guid: 18760659a26472940aef6af37dce3acc, type: 2}
+  - {fileID: 11400000, guid: a603b414483e79e4c864ce8141c2aafc, type: 2}
+  - {fileID: 11400000, guid: 468b0468e4742e54b8910a04443e6efc, type: 2}
   statuses:
   - {fileID: 11400000, guid: ba7ec4e60320d41408fa70c56f01b334, type: 2}
   monsters:
@@ -45,9 +48,19 @@ MonoBehaviour:
   - {fileID: 11400000, guid: 0e47199c9cb09f94cbf8525c8748ff76, type: 2}
   currencies:
   - {fileID: 11400000, guid: 234922c8187c9ad4b875320885a94cf8, type: 2}
-  vendors:
-  - {fileID: 11400000, guid: a6e632df28ec52c48abe81c033f9bcd8, type: 2}
   pets:
   - {fileID: 11400000, guid: cbd9acd1848d4e84894202c4fbcddffb, type: 2}
   mounts:
   - {fileID: 11400000, guid: 0bb2a9c0155301247a5ecc02938d014b, type: 2}
+  npcs:
+  - {fileID: 11400000, guid: 198b5b3973f1b2845acc08087ac6bcc1, type: 2}
+  - {fileID: 11400000, guid: 5fa5c6f23ec017c44a9948e4a0cbcccd, type: 2}
+  quests:
+  - {fileID: 11400000, guid: ea1779ad6e5745942b6f25a902cf0007, type: 2}
+  dungeons:
+  - {fileID: 11400000, guid: 6181a6f9cdca81144b070be18405d87a, type: 2}
+  buildingDefs:
+  - {fileID: 11400000, guid: 239829c5373592d4182fd760885a9d55, type: 2}
+  - {fileID: 11400000, guid: bc15db94e5013ff4ca3374912da5674c, type: 2}
+  portalPrefab: {fileID: 3170415547807634471, guid: dce37949bf3e1504f91e56304760f0ce, type: 3}
+  campfirePrefab: {fileID: 0}
